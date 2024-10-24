@@ -1,14 +1,16 @@
 #include "ConsoleScreen.h"
 #include "CoreStateManager.h"
 
-// Console color codes
-const char RESET[] = "\033[0m";
-const char CYAN[]  = "\033[36m";
-const char GREEN[] = "\033[32m";
-const char PINK[]  = "\e[38;5;212m";
+// ANSI escape sequences for terminal text coloring.
+const char DEFAULT[] = "\033[0m";  // Resets the color back to default.
+const char BLUE[] = "\033[36m";    // Cyan/Blue-colored text.
+const char GREEN[] = "\033[32m";   // Green-colored text.
 
-// Display the application header and welcome message
-void ConsoleScreen::displayHeader() const
+/**
+ * Displays the header information at the start of the program.
+ * This includes a welcome banner and some instructions for the user.
+ */
+void ConsoleScreen::printHeader()
 {
     std::cerr << 
     "  ____ ____   ___  ____  _____ ______   __\n"
@@ -18,104 +20,146 @@ void ConsoleScreen::displayHeader() const
     " \\____|____/ \\___/|_|   |_____|____/ |_|\n\n"
     << GREEN << "Hello. Welcome to the CSOPESY Command Line!\n"
     << "Type 'exit' to quit, 'clear' to clear the screen" 
-    << RESET << std::endl;
+    << DEFAULT << std::endl;
 }
 
-// Display all processes in the system
-void ConsoleScreen::displayAllProcesses(
-    const std::map<std::string, std::shared_ptr<Process>>& process_list, int core_count)
+/**
+ * Displays a summary of all processes by printing them to the standard output.
+ * @param process_list Map containing processes identified by their name.
+ * @param cpu_count Number of CPU cores available.
+ */
+void ConsoleScreen::showAllProcesses(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count)
 {
-    displayProcessesToStream(process_list, core_count, std::cout);
+    // Calls the streamAllProcesses method with std::cout as the output stream.
+    streamAllProcesses(process_list, cpu_count, std::cout);
 }
 
-// Helper function to group and display processes to a given stream
-void ConsoleScreen::displayProcessesToStream(
-    const std::map<std::string, std::shared_ptr<Process>>& process_list, 
-    int core_count, std::ostream& out)
+/**
+ * Streams the details of all processes to the given output stream.
+ * This function organizes processes by their state (READY, RUNNING, FINISHED)
+ * and displays CPU core utilization.
+ * 
+ * @param process_list Map of processes identified by their names.
+ * @param cpu_count Total number of CPU cores available.
+ * @param out The output stream where the processes will be displayed.
+ */
+void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, std::ostream& out)
 {
+    // If no processes are available, print a message and exit early.
     if (process_list.empty())
     {
-        out << "No screens available.\n";
+        out << "There are no active screens." << std::endl;
         return;
     }
 
-    // Track ready, running, and finished process outputs
-    std::stringstream ready_stream, running_stream, finished_stream;
-    int core_usage = std::count(CoreStateManager::getInstance().getCoreStates().begin(), 
-                                CoreStateManager::getInstance().getCoreStates().end(), true);
+    // Buffers to store formatted output for different process states.
+    std::stringstream ready, running, finished;
+    int core_usage = 0;  // Tracks the number of CPU cores currently used.
 
-    // Print CPU and core usage
-    out << "CPU utilization: " << (double(core_usage) / core_count) * 100 << "%\n"
-        << "Cores used: " << core_usage << "\n"
-        << "Cores available: " << core_count - core_usage << "\n"
-        << "------------------------------------------------\n";
+    // Retrieve the state of each core from CoreStateManager (singleton).
+    const std::vector<bool>& core_states = CoreStateManager::getInstance().getCoreStates();
 
-    // Categorize processes by their state and format their output
-    for (const auto& [name, process] : process_list)
+    // Count the number of active cores (core_usage).
+    for (bool core_state : core_states)
     {
-        std::stringstream info;
-        info << std::left << std::setw(30) << process->getName() 
+        if (core_state)
+        {
+            core_usage++;
+        }
+    }
+
+    // Begin displaying process information.
+    out << "Existing Screens:" << std::endl;
+
+    // Iterate over all processes in the map.
+    for (const auto &pair : process_list)
+    {
+        const std::shared_ptr<Process> process = pair.second;  // Retrieve process object.
+
+        // Format each process into a string with details like name, state, and progress.
+        std::stringstream temp;
+        temp << std::left << std::setw(30) << process->getName() 
              << " (" << process->getTime() << ") ";
 
+        // Check the process state and format accordingly.
         if (process->getState() == Process::READY)
         {
-            ready_stream << info.str() 
-                         << "  READY   " 
-                         << process->getCommandCounter() << " / " 
-                         << process->getLinesOfCode() << '\n';
+            temp << "  READY   "
+                 << process->getCommandCounter() << " / " 
+                 << process->getLinesOfCode() << std::endl;
+            ready << temp.str() << std::endl;  // Store in ready processes.
         }
         else if (process->getState() == Process::RUNNING)
         {
-            running_stream << info.str() 
-                           << "  Core: " << process->getCPUCoreID() << "   "
-                           << process->getCommandCounter() << " / " 
-                           << process->getLinesOfCode() << '\n';
+            temp << "  Core: " << process->getCPUCoreID() << "   "
+                 << process->getCommandCounter() << " / " 
+                 << process->getLinesOfCode() << std::endl;
+            running << temp.str() << std::endl;  // Store in running processes.
         }
         else
         {
-            finished_stream << info.str() 
-                            << "  FINISHED   " 
-                            << process->getCommandCounter() << " / " 
-                            << process->getLinesOfCode() << '\n';
+            temp << "  FINISHED   "
+                 << process->getCommandCounter() << " / " 
+                 << process->getLinesOfCode() << std::endl;
+            finished << temp.str() << std::endl;  // Store in finished processes.
         }
     }
 
-    // Display categorized process streams
-    out << "Ready Processes:\n" << ready_stream.str()
-        << "==========================================\n"
-        << "Running Processes:\n" << running_stream.str()
-        << "==========================================\n"
-        << "Finished Processes:\n" << finished_stream.str()
-        << "------------------------------------------------\n";
+    // Display CPU core utilization information.
+    out << "CPU utilization: " << (static_cast<double>(core_usage) / cpu_count) * 100 << "%\n";
+    out << "Cores used: " << core_usage << "\n";
+    out << "Cores available: " << cpu_count - core_usage << "\n";
+    out << "------------------------------------------------\n";
+
+    // Print each category of processes.
+    out << "Ready Processes: \n" << ready.str();
+    std::cout << "==========================================\n";
+    out << "\nRunning Processes: \n" << running.str();
+    std::cout << "==========================================\n";
+    out << "\nFinished Processes: \n" << finished.str();
+    out << "------------------------------------------------\n";
 }
 
-// Display a single process's details (updated view)
-void ConsoleScreen::displayUpdatedProcess(const std::shared_ptr<Process>& process)
+/**
+ * Shows the updated state of a specific process on the console.
+ * If the process is running, it prints the current progress. 
+ * If the process is finished, it prints a completion message.
+ * 
+ * @param process Shared pointer to the process object.
+ */
+void ConsoleScreen::showProcessUpdated(std::shared_ptr<Process> process)
 {
-    std::cout << CYAN << "Screen: " << process->getName() << RESET << '\n';
-
+    std::cout << BLUE << "Screen: " << process->getName() << DEFAULT << std::endl;
+    
     if (process->getState() == Process::RUNNING)
     {
-        std::cout << "Current instruction line: " << process->getCommandCounter() 
-                  << "\nLines of code: " << process->getLinesOfCode() << '\n';
+        std::cout << "Current instruction line: " << process->getCommandCounter() << std::endl;
+        std::cout << "Lines of code: " << process->getLinesOfCode() << std::endl;
     }
     else
     {
-        std::cout << "Finished!\n";
+        std::cout << "Finished!" << std::endl;
     }
     std::cout << std::endl;
 }
 
-// Allow interaction with a specific process
-void ConsoleScreen::displaySingleProcess(const std::shared_ptr<Process>& process)
+/**
+ * Displays the details of a specific process and allows the user to 
+ * interact with it by entering commands in a loop.
+ * 
+ * @param process Shared pointer to the process object to display.
+ */
+void ConsoleScreen::showScreen(std::shared_ptr<Process> process)
 {
-    std::cout << CYAN << "Screen: " << process->getName() << RESET << '\n'
-              << "Instruction: Line " << process->getCommandCounter() 
-              << " / " << process->getLinesOfCode() << '\n'
-              << "Created at: " << process->getTime() << '\n'
-              << "Type 'exit' to return to the main menu.\n";
+    std::cout << BLUE << "Screen: " << process->getName() << DEFAULT << std::endl;
+    std::cout << "Instruction: Line " << process->getCommandCounter() << " / "
+              << process->getLinesOfCode() << std::endl;
+    std::cout << "Created at: " << process->getTime() << std::endl;
+    std::cout << "Type 'exit' to return to the main menu." << std::endl;
 
     std::string command;
+
+    // Loop to handle user input until the 'exit' command is entered.
     while (true)
     {
         std::cout << "Enter a command: ";
@@ -123,27 +167,32 @@ void ConsoleScreen::displaySingleProcess(const std::shared_ptr<Process>& process
 
         if (command == "process-smi")
         {
-            displayUpdatedProcess(process);
+            showProcessUpdated(process);  // Show updated process info.
         }
         else if (command == "exit")
         {
-            system("cls");
-            displayHeader();
+            system("cls");  // Clear the console.
+            printHeader();  // Reprint the header.
             break;
         }
         else
         {
-            std::cout << "Unknown command. Please try again.\n";
+            std::cout << "Unknown command. Please try again." << std::endl;
         }
     }
 }
 
-// Get the current timestamp in a formatted string
+/**
+ * Retrieves the current timestamp in the format "MM/DD/YYYY, HH:MM:SS AM/PM".
+ * @return A string representing the current timestamp.
+ */
 std::string ConsoleScreen::getCurrentTimestamp()
 {
-    std::time_t now = std::time(nullptr);
+    std::time_t now = std::time(nullptr);  // Get current time.
     std::tm local_time;
-    localtime_s(&local_time, &now); // Thread-safe time conversion
+    localtime_s(&local_time, &now);  // Convert to local time.
+
+    // Format the timestamp.
     std::ostringstream oss;
     oss << std::put_time(&local_time, "%m/%d/%Y, %I:%M:%S %p");
     return oss.str();

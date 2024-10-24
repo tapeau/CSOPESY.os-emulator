@@ -2,37 +2,43 @@
 
 #include <string>
 #include <map>
-#include <memory>
-#include <thread>
 #include <iostream>
 #include <fstream>
-
+#include "ProcessManager.h"
 #include "ConsoleScreen.h"
 
+// ConsoleManager class to manage console screens and user commands
 class ConsoleManager
 {
-    // Configuration and state management variables
-    int cpu_count{}, quantum_cycles{}, batch_frequency{};
-    int min_instructions{}, max_instructions{}, delay_per_exec{};
-    std::string scheduler_type;
-    bool is_initialized = false, scheduler_running = false;
+    int cpu_count; // Number of CPUs
+    std::string scheduler_algorithm; // Selected scheduling algorithm
+    int quantum_cycles; // Quantum cycles for scheduling
+    int batch_process_frequency; // Frequency of batch process creation
+    int min_instructions; // Minimum instructions per process
+    int max_instructions; // Maximum instructions per process
+    int delays_per_execution; // Delays per execution cycle
+    bool is_initialized = false; // Initialization status flag
+    bool is_scheduler_running = false; // Scheduler running flag
 
-    // Structure for screen sessions
+private:
+    // Structure to store screen information
     struct Screen
     {
-        std::string process_name;
-        int current_line = 0, total_lines = 100;
-        std::string timestamp;
+        std::string process_name; // Name of the associated process
+        int current_line; // Current line displayed on screen
+        int total_lines; // Total lines to display
+        std::string timestamp; // Timestamp of session creation
     };
 
-    std::map<std::string, Screen> screen_sessions;  // Active screen sessions
-    ConsoleScreen screen_manager;
+    std::map<std::string, Screen> screens; // Map to store screen sessions
+    ConsoleScreen screen_manager; // Screen manager for display operations
+    ProcessManager* process_manager; // Pointer to process manager
 
 public:
-    // Core methods for managing sessions and processes
-    void createSession(const std::string& name);
-    void generateSession(const std::string& name);
-    void displayAllScreens();
-    void saveReport();
-    void handleCommand(const std::string& command);  // Entry point for user commands
+    // Methods to manage screens and commands
+    void createScreen(const std::string &session_name);
+    void createScreenSilent(const std::string &session_name);
+    void showAllScreens();
+    void reportUtilization();
+    void processCommand(const std::string &command);
 };

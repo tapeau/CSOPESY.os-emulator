@@ -1,28 +1,24 @@
-#include <iostream>
 #include <string>
-#include <cstdlib>
-
+#include <iostream>
 #include "ConsoleManager.h"
 #include "ConsoleScreen.h"
 
 int main()
 {
-    ConsoleManager console_manager;   // Object to handle commands
-    ConsoleScreen screen_manager;     // Object to manage screen display
-    std::string user_command;         // Store user input
+    ConsoleManager console_manager;
+    ConsoleScreen console_screen;
+    std::string user_command;
 
-    system("cls");  // Clear console screen (for Windows)
-    screen_manager.displayHeader();  // Display initial header or welcome message
+    system("cls"); // Clear the screen
+    console_screen.printHeader(); // Display the header
 
-    // Main command loop to keep taking user input until "exit" is entered
+    // Infinite loop for continuous user_command polling
     while (true)
     {
         std::cout << "Enter a command: ";
-        std::getline(std::cin, user_command);  // Read user input including spaces
-
-        console_manager.handleCommand(user_command);  // Process the command
-
-        // Exit the loop if the user entered "exit"
+        std::getline(std::cin, user_command);
+        console_manager.processCommand(user_command);
+        
         if (user_command == "exit")
         {
             break;
