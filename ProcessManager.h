@@ -4,8 +4,9 @@
 #include <memory>  
 #include <vector>  
 #include <iostream>
-#include <thread>
-#include "Process.h"
+#include <thread>  
+#include "Process.h"  
+#include "Scheduler.h"
 
 using namespace std;
 
@@ -17,6 +18,7 @@ private:
     map<string, std::shared_ptr<Process>> process_list;
 
     int process_id_counter = 0;  // Counter to assign unique IDs to new processes.
+    Scheduler scheduler;         // Scheduler instance to manage process scheduling.
     thread scheduler_thread;     // Thread to run the scheduler asynchronously.
     int min_instructions;        // Minimum number of instructions a process can generate.
     int max_instructions;        // Maximum number of instructions a process can generate.
@@ -64,6 +66,11 @@ public:
      */
     ~ProcessManager()
     {
-        // TODO: Proper scheduler handling at process termination.
+        // If the scheduler thread is still running, stop it before destruction.
+        if (scheduler_thread.joinable())
+        {
+            scheduler.stop();  // Signal the scheduler to stop.
+            scheduler_thread.join();  // Wait for the thread to finish.
+        }
     }
 };

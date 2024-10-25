@@ -8,7 +8,7 @@ void ConsoleManager::createScreen(const std::string &screen_name)
     // Check if the screen session already exists
     if (screens.find(screen_name) != screens.end())
     {
-        std::cout << "Screen \"" << screen_name << "\" already exists. Program will now reattach to it.\n";
+        std::cout << "Screen \"" << screen_name << "\" already exists. Program will now reattach to it." << std::endl;
         return; // Exit if session exists
     }
 
@@ -35,7 +35,7 @@ void ConsoleManager::createScreenSilent(const std::string &screen_name)
     // Check if the screen session already exists
     if (screens.find(screen_name) != screens.end())
     {
-        std::cout << "Screen \"" << screen_name << "\" already exists. Program will now reattach to it.\n";
+        std::cout << "Screen \"" << screen_name << "\" already exists. Program will now reattach to it." << std::endl;
         return; // Exit if session exists
     }
 
@@ -87,7 +87,7 @@ void ConsoleManager::processCommand(const std::string &command)
     // Ensure the system is initialized before executing most commands
     if (!is_initialized && !(command == "exit" || command == "initialize"))
     {
-        std::cout << "[WARNING] Initialize the OS first using the \"initialize\" command\n";
+        std::cout << "Please initialize the OS first using the \"initialize\" command." << std::endl;
         return;
     }
 
@@ -132,7 +132,7 @@ void ConsoleManager::processCommand(const std::string &command)
         }
         else
         {
-            std::cerr << "Unable to open file" << std::endl;
+            std::cerr << "Unable to open file \"config.txt\"." << std::endl;
         }
     }
     // Create a new screen session with the given name
@@ -209,7 +209,7 @@ void ConsoleManager::processCommand(const std::string &command)
         }
         else
         {
-            std::cout << "Please start the scheduler first using the \"scheduler-test\" command" << std::endl;
+            std::cout << "Please start the scheduler first using the \"scheduler-test\" command." << std::endl;
         }
     }
     // Clear the console
