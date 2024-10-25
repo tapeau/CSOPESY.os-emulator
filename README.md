@@ -1,5 +1,5 @@
 # OS Emulator
-A simple command-line operating system emulator developed for DLSU CSOPESY course (T1 2024-2025)
+A simple command-line operating system emulator developed for DLSU CSOPESY course (T1 2024-2025).
 
 ## Members
 - Alamay, Carl Justine 
@@ -8,7 +8,7 @@ A simple command-line operating system emulator developed for DLSU CSOPESY cours
 - Tapia, John Lorenzo
 
 ## Running the program
-1. Clone this repository
+1. Clone this repository.
 2. Run the `start.bat` file.
 
 ## Previous version
