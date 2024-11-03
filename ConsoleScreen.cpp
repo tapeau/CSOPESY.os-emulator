@@ -23,7 +23,7 @@ void ConsoleScreen::printHeader()
     << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
     << "\n"
     << "Last updated: 11-03-2024\n"
-    << "------------------------------------------"
+    << DEFAULT << "------------------------------------------\n"
     << "Type 'exit' to quit, 'clear' to clear the screen" 
     << DEFAULT << std::endl;
 }
