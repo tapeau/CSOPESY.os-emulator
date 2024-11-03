@@ -123,9 +123,13 @@ void ConsoleManager::processCommand(const std::string &command)
             std::cout << "max-ins: " << max_instructions << std::endl;
             std::cout << "delays-per-exec: " << delays_per_execution << std::endl;
 
+            // Initialize CPU clock
+            cpu_clock = new Clock();
+            cpu_clock->startClock();
+            
             // Initialize the process manager with configuration parameters
             process_manager = new ProcessManager(
-                min_instructions, max_instructions, cpu_count, scheduler_algorithm, delays_per_execution, quantum_cycles
+                min_instructions, max_instructions, cpu_count, scheduler_algorithm, delays_per_execution, quantum_cycles, cpu_clock
             );
 
             is_initialized = true; // Set the initialized flag
@@ -185,11 +189,26 @@ void ConsoleManager::processCommand(const std::string &command)
             // Launch the scheduler in a new thread
             scheduler_thread = std::thread([this]()
             {
+                int cpu_tick = 0;
+                std::unique_lock<std::mutex> lock(cpu_clock->getMutex(), std::defer_lock);
+                
                 while (is_scheduler_running)
                 {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(batch_process_frequency));
-                    std::string session_name = "Process_" + std::to_string(screens.size());
-                    createScreenSilent(session_name);
+                    // Wait for each CPU tick
+                    lock.lock();
+                    cpu_clock->getCondition().wait(lock);
+                    lock.unlock();
+
+                    // Increment CPU tick counter on each tick
+                    ++cpu_tick;
+
+                    // Generate session after every batch_process_frequency ticks
+                    if (cpu_tick >= batch_process_frequency)
+                    {
+                        cpu_tick = 0; // Reset counter
+                        std::string session_name = "Process_" + std::to_string(screens.size());
+                        createScreenSilent(session_name);  
+                    }
                 }
             });
         }

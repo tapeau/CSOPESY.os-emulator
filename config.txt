@@ -1,0 +1,7 @@
+num-cpu: 4
+scheduler: "fcfs"
+quantum-cycles: 5
+batch-process-freq: 20
+min-ins: 1080
+max-ins: 2440
+delays-per-exec: 4

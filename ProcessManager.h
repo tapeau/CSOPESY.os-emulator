@@ -7,6 +7,7 @@
 #include <thread>  
 #include "Process.h"  
 #include "Scheduler.h"
+#include "Clock.h"
 
 using namespace std;
 
@@ -22,6 +23,7 @@ private:
     thread scheduler_thread;     // Thread to run the scheduler asynchronously.
     int min_instructions;        // Minimum number of instructions a process can generate.
     int max_instructions;        // Maximum number of instructions a process can generate.
+    Clock* cpu_clock;            // CPU clock object
 
 public:
     /**
@@ -35,7 +37,7 @@ public:
      * @param quantum_cycle Time quantum (used for Round-Robin scheduling).
      */
     ProcessManager(int min_instructions, int max_instructions, int cpu_count, 
-                   std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle);
+                   std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle, Clock* cpu_clock);
 
     /**
      * Adds a new process to the manager and schedules it.

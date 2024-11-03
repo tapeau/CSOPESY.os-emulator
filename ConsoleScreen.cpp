@@ -101,6 +101,13 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
                  << process->getLinesOfCode() << std::endl;
             running << temp.str() << std::endl;  // Store in running processes.
         }
+        else if (process->getState() == Process::WAITING)
+        {
+            temp << "  WAITING   "
+                 << process->getCommandCounter() << " / " 
+                 << process->getLinesOfCode() << std::endl;
+            running << temp.str() << std::endl;  // Store in running processes.
+        }
         else
         {
             temp << "  FINISHED   "

@@ -4,9 +4,10 @@
 #include "Scheduler.h"
 #include "Process.h" 
 #include "CoreStateManager.h"
+#include "Clock.h"
 
 // Constructor initializes the scheduler's state and member variables.
-Scheduler::Scheduler() : is_running(false), active_threads(0), debug_file("debug.txt"), ready_threads(0) {}
+Scheduler::Scheduler() : is_running(false), active_threads(0), debug_file("debug.txt"), ready_threads(0), cpu_clock(nullptr) {}
 
 // Add a new process to the scheduling queue.
 void Scheduler::addProcess(std::shared_ptr<Process> process)
@@ -39,6 +40,12 @@ void Scheduler::setDelays(int delay)
 void Scheduler::setQuantumCycle(int quantum_cycle)
 {
     this->quantum_cycle = quantum_cycle;
+}
+
+// Set the Clock object to be used as the CPU clock
+void Scheduler::setClock(Clock* cpu_clock)
+{
+    this->cpu_clock = cpu_clock;
 }
 
 // Start the scheduler by launching worker threads equal to the number of CPUs.
@@ -145,7 +152,7 @@ void Scheduler::scheduleFCFS(int core_id)
                 // Ensure the active thread count does not exceed available CPUs.
                 if (active_threads > cpu_count)
                 {
-                    std::cerr << "Error: Exceeded CPU limit!" << std::endl;
+                    std::cerr << "CPU limit exceeded!" << std::endl;
                     active_threads--;
                     continue;
                 }
@@ -156,18 +163,40 @@ void Scheduler::scheduleFCFS(int core_id)
             process->setCPUCoreID(assigned_core); // Assign the core to the process.
             CoreStateManager::getInstance().setCoreState(assigned_core, true); // Mark the core as in use.
 
+            int last_clock_value = cpu_clock->getClock();
+            bool is_first_command_executed = false;
+            int cycle_counter = 0;
+
             // Execute the process until it completes all commands.
             while (process->getCommandCounter() < process->getLinesOfCode())
             {
-                process->executeCurrentCommand(); // Execute the current command.
-                std::this_thread::sleep_for(std::chrono::milliseconds(delay_per_execution)); // Simulate execution delay.
+                // Wait for the next CPU cycle
+                std::unique_lock<std::mutex> lock(cpu_clock->getMutex());
+                cpu_clock->getCondition().wait(lock, [&]
+                {
+                    return cpu_clock->getClock() > last_clock_value;
+                });
+                last_clock_value = cpu_clock->getClock();
+
+                // Execute the first command immediately, then apply delay for subsequent commands
+                if (!is_first_command_executed || (++cycle_counter >= delay_per_execution))
+                {
+                    process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
+                    process->executeCurrentCommand();
+                    is_first_command_executed = true;
+                    cycle_counter = 0; // Reset cycle counter after each execution
+                }
+                else
+                {
+                    process->setState(Process::ProcessState::WAITING); // Set the process state to WAITING.
+                }
             }
+            
             process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
 
-            {
-                std::lock_guard<std::mutex> lock(active_threads_mutex);
-                active_threads--; // Decrement the active thread count.
-            }
+            std::lock_guard<std::mutex> lock(active_threads_mutex);
+            active_threads--; // Decrement the active thread count.
+
             logActiveThreads(assigned_core, nullptr); // Log the thread state after completion.
             queue_condition.notify_one(); // Notify other threads of availability.
         }
@@ -202,7 +231,7 @@ void Scheduler::scheduleRR(int core_id)
                 // Ensure the active thread count does not exceed available CPUs.
                 if (active_threads > cpu_count)
                 {
-                    std::cerr << "Error: Exceeded CPU limit!" << std::endl;
+                    std::cerr << "CPU limit exceeded!" << std::endl;
                     active_threads--;
                     continue;
                 }
@@ -213,13 +242,35 @@ void Scheduler::scheduleRR(int core_id)
             process->setCPUCoreID(core_id); // Assign the current core to the process.
             CoreStateManager::getInstance().setCoreState(core_id, true); // Mark the core as in use.
 
+            int last_clock_value = cpu_clock->getClock();
+            bool is_first_command_executed = false;
+            int cycle_counter = 0;
+
             // Execute the process for a time slice (quantum).
             int quantum = 0;
             while (process->getCommandCounter() < process->getLinesOfCode() && quantum < quantum_cycle)
             {
-                process->executeCurrentCommand(); // Execute the current command.
-                std::this_thread::sleep_for(std::chrono::milliseconds(delay_per_execution)); // Simulate execution delay.
-                quantum++; // Increment the quantum counter.
+                // Wait for the next CPU cycle
+                std::unique_lock<std::mutex> lock(cpu_clock->getMutex());
+                cpu_clock->getCondition().wait(lock, [&]
+                {
+                    return cpu_clock->getClock() > last_clock_value;
+                });
+                last_clock_value = cpu_clock->getClock();
+
+                // Execute the first command immediately, then apply delay for subsequent commands
+                if (!is_first_command_executed || (++cycle_counter >= delay_per_execution))
+                {
+                    process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
+                    process->executeCurrentCommand();
+                    is_first_command_executed = true;
+                    cycle_counter = 0; // Reset cycle counter after each execution
+                    quantum++;        // Increment quantum usage after each command execution
+                }
+                else
+                {
+                    process->setState(Process::ProcessState::WAITING); // Set the process state to WAITING.
+                }
             }
 
             // If the process is not finished, put it back in the queue.
@@ -234,10 +285,9 @@ void Scheduler::scheduleRR(int core_id)
                 process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
             }
 
-            {
-                std::lock_guard<std::mutex> lock(active_threads_mutex);
-                active_threads--; // Decrement the active thread count.
-            }
+            std::lock_guard<std::mutex> lock(active_threads_mutex);
+            active_threads--; // Decrement the active thread count.
+
             logActiveThreads(core_id, nullptr); // Log the thread state after completion.
             queue_condition.notify_one(); // Notify other threads of availability.
         }

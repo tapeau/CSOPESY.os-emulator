@@ -8,6 +8,7 @@
 #include <memory>
 #include <fstream>
 #include <string>
+#include "Clock.h"
 
 // Forward declaration of the Process class.
 class Process; 
@@ -64,6 +65,11 @@ public:
      */
     void stop(); 
 
+    /**
+     * @brief Sets the CPU clock object.
+     */
+    void setClock(Clock* cpu_clock); 
+
 private:
     /**
      * @brief Main function executed by each worker thread.
@@ -109,4 +115,5 @@ private:
     
     std::mutex start_mutex; ///< Mutex for synchronizing thread startup.
     std::condition_variable start_condition; ///< Condition variable to signal thread startup.
+    Clock* cpu_clock; ///< CPU clock object to be used.
 };

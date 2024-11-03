@@ -6,6 +6,7 @@
 #include <fstream>
 #include "ProcessManager.h"
 #include "ConsoleScreen.h"
+#include "Clock.h"
 
 // ConsoleManager class to manage console screens and user commands
 class ConsoleManager
@@ -19,6 +20,7 @@ class ConsoleManager
     int delays_per_execution; // Delays per execution cycle
     bool is_initialized = false; // Initialization status flag
     bool is_scheduler_running = false; // Scheduler running flag
+    Clock* cpu_clock; // CPU clock object
 
 private:
     // Structure to store screen information

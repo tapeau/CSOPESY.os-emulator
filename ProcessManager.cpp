@@ -2,17 +2,21 @@
 
 // Constructor for ProcessManager initializes the scheduler and starts its thread.
 ProcessManager::ProcessManager(int min_instructions, int max_instructions, int cpu_count, 
-                               std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle)
+                               std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle, Clock* cpu_clock)
 {
     // Store the min and max instructions for each process.
     this->min_instructions = min_instructions;
     this->max_instructions = max_instructions;
+
+    // Set the CPU clock object
+    this->cpu_clock = cpu_clock;
 
     // Configure the scheduler with user-specified settings.
     scheduler.setAlgorithm(scheduler_algorithm);       // Set scheduling algorithm (e.g., FCFS, Round-Robin).
     scheduler.setDelays(delays_per_execution);         // Set delays allowed per execution.
     scheduler.setNumCPUs(cpu_count);                   // Set the number of CPUs to use.
     scheduler.setQuantumCycle(quantum_cycle);          // Set quantum cycle (for Round-Robin algorithms).
+    scheduler.setClock(cpu_clock);
 
     // Launch the scheduler in a separate thread to manage processes asynchronously.
     scheduler_thread = std::thread(&Scheduler::start, &scheduler);
