@@ -14,7 +14,7 @@ void Scheduler::addProcess(std::shared_ptr<Process> process)
 {
     std::unique_lock<std::mutex> lock(queue_mutex); // Lock the queue to ensure thread-safe access.
     process_queue.push(process); // Add the process to the queue.
-    queue_condition.notify_one(); // Notify a waiting thread that a new process is available.
+    queue_condition.notify_all(); // Notify a waiting thread that a new process is available.
 }
 
 // Set the scheduling algorithm to be used (e.g., Round Robin or FCFS).
@@ -91,7 +91,7 @@ void Scheduler::run(int core_id)
         ready_threads++; // Mark this thread as ready.
         if (ready_threads == cpu_count)
         {
-            start_condition.notify_one(); // Notify the main thread that all worker threads are ready.
+            start_condition.notify_all(); // Notify the main thread that all worker threads are ready.
         }
     }
 
@@ -102,12 +102,12 @@ void Scheduler::run(int core_id)
     }
     else if (scheduler_algorithm == "fcfs")
     {
-        scheduleFCFS(core_id); // Run First-Come, First-Serve scheduling.
+        scheduleFCFS(); // Run First-Come, First-Serve scheduling.
     }
 }
 
 // FCFS (First-Come, First-Serve) scheduling algorithm.
-void Scheduler::scheduleFCFS(int core_id)
+void Scheduler::scheduleFCFS()
 {
     while (is_running)
     {
@@ -161,7 +161,7 @@ void Scheduler::scheduleFCFS(int core_id)
             logActiveThreads(assigned_core, process); // Log the active threads.
             process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
             process->setCPUCoreID(assigned_core); // Assign the core to the process.
-            CoreStateManager::getInstance().setCoreState(assigned_core, true); // Mark the core as in use.
+            CoreStateManager::getInstance().flipCoreState(assigned_core); // Mark the core as in use.
 
             int last_clock_value = cpu_clock->getClock();
             bool is_first_command_executed = false;
@@ -193,14 +193,14 @@ void Scheduler::scheduleFCFS(int core_id)
             }
             
             process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
+            CoreStateManager::getInstance().flipCoreState(assigned_core); // Mark the core as idle.
 
             std::lock_guard<std::mutex> lock(active_threads_mutex);
             active_threads--; // Decrement the active thread count.
 
             logActiveThreads(assigned_core, nullptr); // Log the thread state after completion.
-            queue_condition.notify_one(); // Notify other threads of availability.
+            queue_condition.notify_all(); // Notify other threads of availability.
         }
-        CoreStateManager::getInstance().setCoreState(assigned_core, false); // Mark the core as idle.
     }
 }
 
@@ -240,7 +240,7 @@ void Scheduler::scheduleRR(int core_id)
             logActiveThreads(core_id, process); // Log the active threads.
             process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
             process->setCPUCoreID(core_id); // Assign the current core to the process.
-            CoreStateManager::getInstance().setCoreState(core_id, true); // Mark the core as in use.
+            CoreStateManager::getInstance().flipCoreState(core_id); // Mark the core as in use.
 
             int last_clock_value = cpu_clock->getClock();
             bool is_first_command_executed = false;
@@ -283,22 +283,21 @@ void Scheduler::scheduleRR(int core_id)
             else
             {
                 process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
+                CoreStateManager::getInstance().flipCoreState(core_id); // Mark the core as idle.
             }
 
             std::lock_guard<std::mutex> lock(active_threads_mutex);
             active_threads--; // Decrement the active thread count.
 
             logActiveThreads(core_id, nullptr); // Log the thread state after completion.
-            queue_condition.notify_one(); // Notify other threads of availability.
+            queue_condition.notify_all(); // Notify other threads of availability.
         }
-        CoreStateManager::getInstance().setCoreState(core_id, false); // Mark the core as idle.
     }
 }
 
 // Log the current state of active threads and processes to the debug file.
 void Scheduler::logActiveThreads(int core_id, std::shared_ptr<Process> current_process)
 {
-    std::lock_guard<std::mutex> lock(active_threads_mutex); // Lock for thread safety.
     auto now = std::chrono::system_clock::now(); // Get the current time.
     auto now_c = std::chrono::system_clock::to_time_t(now); // Convert to time_t.
     auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;

@@ -13,11 +13,10 @@ public:
     // Ensures that only one instance of the class is ever created.
     static CoreStateManager& getInstance();
 
-    // **Set the state of a specific core**
+    // **Flip the state of a specific core**
     // Params:
     //  - core_id: ID of the core (1-based index).
-    //  - state: True if the core is busy, False if idle.
-    void setCoreState(int core_id, bool state);
+    void flipCoreState(int core_id);
 
     // **Get the state of an individual core**
     // Params:

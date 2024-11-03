@@ -11,14 +11,13 @@ CoreStateManager& CoreStateManager::getInstance()
     return instance;
 }
 
-// **Set the state of a specific core**
+// **Flip the state of a specific core**
 // Params:
 //  - core_id: The ID of the core (1-based index).
-//  - state: True if the core is busy, False if idle.
 //
 // Adjusts for the 1-based core ID by converting it to a 0-based index before accessing the state vector.
 // If the core_id is out of range, an error message is printed.
-void CoreStateManager::setCoreState(int core_id, bool state)
+void CoreStateManager::flipCoreState(int core_id)
 {
     std::lock_guard<std::mutex> lock(mutex);  // Ensure thread-safe access.
 
@@ -26,7 +25,7 @@ void CoreStateManager::setCoreState(int core_id, bool state)
 
     if (core_id >= 0 && core_id < core_states.size())
     {
-        core_states[core_id] = state;  // Update the core state.
+        core_states[core_id] = !core_states[core_id];  // Update the core state.
     }
     else
     {

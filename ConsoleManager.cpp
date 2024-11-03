@@ -85,14 +85,14 @@ void ConsoleManager::processCommand(const std::string &command)
     static std::thread scheduler_thread; // Thread for scheduler testing
 
     // Ensure the system is initialized before executing most commands
-    if (!is_initialized && !(command == "exit" || command == "initialize"))
+    if (!is_initialized && !(command == "exit" || command == "initialize" || command == "init"))
     {
         std::cout << "Please initialize the OS first using the \"initialize\" command." << std::endl;
         return;
     }
 
     // Initialize the system by loading configuration from a file
-    if (command == "initialize")
+    if (command == "initialize" || command == "init")
     {
         system("cls"); // Clear console
         screen_manager.printHeader(); // Display application header

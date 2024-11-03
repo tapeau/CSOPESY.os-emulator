@@ -79,9 +79,8 @@ private:
 
     /**
      * @brief Executes processes using First-Come, First-Serve (FCFS) scheduling.
-     * @param core_id ID of the CPU core assigned to the thread.
      */
-    void scheduleFCFS(int core_id); 
+    void scheduleFCFS(); 
 
     /**
      * @brief Executes processes using Round Robin (RR) scheduling.
