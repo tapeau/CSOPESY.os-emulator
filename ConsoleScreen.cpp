@@ -18,7 +18,12 @@ void ConsoleScreen::printHeader()
     "| |   \\___ \\| | | | |_) |  _| \\___ \\\\ V / \n"
     "| |___ ___) | |_| |  __/| |___ ___) || |\n"
     " \\____|____/ \\___/|_|   |_____|____/ |_|\n\n"
+    "------------------------------------------"
     << GREEN << "Hello. Welcome to the CSOPESY Command Line!\n"
+    << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
+    << "\n"
+    << "Last updated: 11-03-2024\n"
+    << "------------------------------------------"
     << "Type 'exit' to quit, 'clear' to clear the screen" 
     << DEFAULT << std::endl;
 }
