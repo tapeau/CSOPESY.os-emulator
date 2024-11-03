@@ -1,16 +1,13 @@
+#include <cstdlib>
+#include <random>
 #include "Process.h"
-#include <cstdlib>  
-#include <ctime>
 
 // Constructor implementation.
 Process::Process(int process_id, const std::string &process_name, const std::string &creation_time, 
                  int core_id, int min_instructions, int max_instructions)
     : process_id(process_id), process_name(process_name), creation_time(creation_time), 
       core_id(core_id), process_state(READY) 
-{
-    // Generate the list of print commands when the process is created.
-    generatePrintCommands(min_instructions, max_instructions);
-}
+{}
 
 // Executes the current command in the command list.
 void Process::executeCurrentCommand()
@@ -84,11 +81,15 @@ std::string Process::getTime() const
 // Generates a random number of print commands for the process.
 void Process::generatePrintCommands(int min_instructions, int max_instructions)
 {
-    // Seed the random number generator using the current time and process ID.
-    std::srand(static_cast<unsigned int>(std::time(nullptr)) + process_id);
+    // Create a random number generator
+    std::random_device rd;  // Obtain a random number from hardware
+    std::mt19937 gen(rd()); // Seed the generator
 
-    // Generate a random number of commands within the specified range.
-    int num_commands = min_instructions + (std::rand() % (max_instructions - min_instructions + 1));
+    // Create a uniform distribution in the range [lower, upper]
+    std::uniform_int_distribution<> distrib(min_instructions, max_instructions);
+
+    // Generate a random number
+    int num_commands = distrib(gen);
 
     // Create the print commands and add them to the command list.
     for (int i = 1; i <= num_commands; ++i)
