@@ -18,11 +18,12 @@ void ConsoleScreen::printHeader()
     "| |   \\___ \\| | | | |_) |  _| \\___ \\\\ V / \n"
     "| |___ ___) | |_| |  __/| |___ ___) || |\n"
     " \\____|____/ \\___/|_|   |_____|____/ |_|\n\n"
-    "------------------------------------------"
-    << GREEN << "\nHello. Welcome to the CSOPESY Command Line!\n"
-    << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
+    "------------------------------------------\n"
+    << GREEN << "Hello. Welcome to the CSOPESY Command Line!\n\n"
+    << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" 
+    << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
     << "\n"
-    << "Last updated: 11-03-2024\n"
+    << "Last updated: 11-04-2024\n"
     << DEFAULT << "------------------------------------------\n"
     << "Type 'exit' to quit, 'clear' to clear the screen" 
     << DEFAULT << std::endl;
@@ -141,7 +142,8 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
  */
 void ConsoleScreen::showProcessUpdated(std::shared_ptr<Process> process)
 {
-    std::cout << BLUE << "Screen: " << process->getName() << DEFAULT << std::endl;
+    std::cout << BLUE << "Process: " << process->getName() << DEFAULT << std::endl;
+    std::cout << BLUE << "ID: " << process->getName() << DEFAULT << std::endl;
     
     if (process->getState() == Process::RUNNING)
     {
@@ -163,9 +165,10 @@ void ConsoleScreen::showProcessUpdated(std::shared_ptr<Process> process)
  */
 void ConsoleScreen::showScreen(std::shared_ptr<Process> process)
 {
-    std::cout << BLUE << "Screen: " << process->getName() << DEFAULT << std::endl;
-    std::cout << "Instruction: Line " << process->getCommandCounter() << " / "
-              << process->getLinesOfCode() << std::endl;
+    std::cout << BLUE << "Process: " << process->getName() << DEFAULT << std::endl;
+    std::cout << BLUE << "ID: " << process->getName() << DEFAULT << std::endl;
+    std::cout << "Current instruction line: " << process->getCommandCounter() << std::endl;
+    std::cout << "Lines of code: " << process->getLinesOfCode() << std::endl;
     std::cout << "Created at: " << process->getTime() << std::endl;
     std::cout << "Type 'exit' to return to the main menu." << std::endl;
 
