@@ -6,12 +6,19 @@
 #include <iomanip>
 #include <sstream>
 #include <iostream>
+#include <mutex>
 #include "Process.h"
 
 // The ConsoleScreen class manages the console display of processes and user interactions.
 class ConsoleScreen
 {
 public:
+    // Mutex object for storing process list
+    std::mutex process_list_mutex;
+
+    // Mutex object for storing core states
+    std::mutex core_states_mutex;
+    
     // Displays the header information on the console.
     void printHeader();
 

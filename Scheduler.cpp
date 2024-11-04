@@ -161,7 +161,7 @@ void Scheduler::scheduleFCFS()
             logActiveThreads(assigned_core, process); // Log the active threads.
             process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
             process->setCPUCoreID(assigned_core); // Assign the core to the process.
-            CoreStateManager::getInstance().flipCoreState(assigned_core); // Mark the core as in use.
+            CoreStateManager::getInstance().flipCoreState(assigned_core, process->getName()); // Mark the core as in use.
 
             int last_clock_value = cpu_clock->getClock();
             bool is_first_command_executed = false;
@@ -170,18 +170,29 @@ void Scheduler::scheduleFCFS()
             // Execute the process until it completes all commands.
             while (process->getCommandCounter() < process->getLinesOfCode())
             {
-                // Wait for the next CPU cycle
-                std::unique_lock<std::mutex> lock(cpu_clock->getMutex());
-                cpu_clock->getCondition().wait(lock, [&]
+                if (delay_per_execution != 0)
                 {
-                    return cpu_clock->getClock() > last_clock_value;
-                });
-                last_clock_value = cpu_clock->getClock();
+                    // Wait for the next CPU cycle
+                    std::unique_lock<std::mutex> lock(cpu_clock->getMutex());
+                    cpu_clock->getCondition().wait(lock, [&]
+                    {
+                        return cpu_clock->getClock() > last_clock_value;
+                    });
+                    last_clock_value = cpu_clock->getClock();
+                }
+                else
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                }
 
                 // Execute the first command immediately, then apply delay for subsequent commands
                 if (!is_first_command_executed || (++cycle_counter >= delay_per_execution))
                 {
                     process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
+                    if (!CoreStateManager::getInstance().getCoreState(assigned_core)) // If the core is not in use.
+                    {
+                        CoreStateManager::getInstance().flipCoreState(assigned_core, process->getName()); // Mark the core as in use.
+                    }
                     process->executeCurrentCommand();
                     is_first_command_executed = true;
                     cycle_counter = 0; // Reset cycle counter after each execution
@@ -189,11 +200,15 @@ void Scheduler::scheduleFCFS()
                 else
                 {
                     process->setState(Process::ProcessState::WAITING); // Set the process state to WAITING.
+                    if (CoreStateManager::getInstance().getCoreState(assigned_core)) // If the core is in use.
+                    {
+                        CoreStateManager::getInstance().flipCoreState(assigned_core, ""); // Mark the core as idle.
+                    }
                 }
             }
             
             process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
-            CoreStateManager::getInstance().flipCoreState(assigned_core); // Mark the core as idle.
+            CoreStateManager::getInstance().flipCoreState(assigned_core, ""); // Mark the core as idle.
 
             std::lock_guard<std::mutex> lock(active_threads_mutex);
             active_threads--; // Decrement the active thread count.
@@ -240,7 +255,7 @@ void Scheduler::scheduleRR(int core_id)
             logActiveThreads(core_id, process); // Log the active threads.
             process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
             process->setCPUCoreID(core_id); // Assign the current core to the process.
-            CoreStateManager::getInstance().flipCoreState(core_id); // Mark the core as in use.
+            CoreStateManager::getInstance().flipCoreState(core_id, process->getName()); // Mark the core as in use.
 
             int last_clock_value = cpu_clock->getClock();
             bool is_first_command_executed = false;
@@ -250,18 +265,29 @@ void Scheduler::scheduleRR(int core_id)
             int quantum = 0;
             while (process->getCommandCounter() < process->getLinesOfCode() && quantum < quantum_cycle)
             {
-                // Wait for the next CPU cycle
-                std::unique_lock<std::mutex> lock(cpu_clock->getMutex());
-                cpu_clock->getCondition().wait(lock, [&]
+                if (delay_per_execution != 0)
                 {
-                    return cpu_clock->getClock() > last_clock_value;
-                });
-                last_clock_value = cpu_clock->getClock();
+                    // Wait for the next CPU cycle
+                    std::unique_lock<std::mutex> lock(cpu_clock->getMutex());
+                    cpu_clock->getCondition().wait(lock, [&]
+                    {
+                        return cpu_clock->getClock() > last_clock_value;
+                    });
+                    last_clock_value = cpu_clock->getClock();
+                }
+                else
+                {
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                }
 
                 // Execute the first command immediately, then apply delay for subsequent commands
                 if (!is_first_command_executed || (++cycle_counter >= delay_per_execution))
                 {
                     process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
+                    if (!CoreStateManager::getInstance().getCoreState(core_id)) // If the core is not in use.
+                    {
+                        CoreStateManager::getInstance().flipCoreState(core_id, process->getName()); // Mark the core as in use.
+                    }
                     process->executeCurrentCommand();
                     is_first_command_executed = true;
                     cycle_counter = 0; // Reset cycle counter after each execution
@@ -270,6 +296,10 @@ void Scheduler::scheduleRR(int core_id)
                 else
                 {
                     process->setState(Process::ProcessState::WAITING); // Set the process state to WAITING.
+                    if (CoreStateManager::getInstance().getCoreState(core_id)) // If the core is in use.
+                    {
+                        CoreStateManager::getInstance().flipCoreState(core_id, ""); // Mark the core as idle.
+                    }
                 }
             }
 
@@ -290,7 +320,7 @@ void Scheduler::scheduleRR(int core_id)
 
             logActiveThreads(core_id, nullptr); // Log the thread state after completion.
             queue_condition.notify_all(); // Notify other threads of availability.
-            CoreStateManager::getInstance().flipCoreState(core_id); // Mark the core as idle.
+            CoreStateManager::getInstance().flipCoreState(core_id, ""); // Mark the core as idle.
         }
     }
 }

@@ -240,6 +240,18 @@ void ConsoleManager::processCommand(const std::string &command)
     // Exit the application
     else if (command == "exit")
     {
+        // Check first if scheduler test is running
+        if (is_scheduler_running)
+        {
+            // Stop scheduler before terminating program
+            is_scheduler_running = false;
+            if (scheduler_thread.joinable())
+            {
+                scheduler_thread.join(); // Wait for the thread to finish
+                std::cout << "Scheduler stopped." << std::endl;
+            }
+        }
+        
         std::cout << "Program terminated." << std::endl;
         exit(0); // Terminate the program
     }

@@ -16,7 +16,7 @@ public:
     // **Flip the state of a specific core**
     // Params:
     //  - core_id: ID of the core (1-based index).
-    void flipCoreState(int core_id);
+    void flipCoreState(int core_id, std::string process_name);
 
     // **Get the state of an individual core**
     // Params:
@@ -30,6 +30,11 @@ public:
     // Returns:
     //  - A const reference to the vector containing the state of all cores (true = busy, false = idle).
     const std::vector<bool>& getCoreStates() const;
+
+    // **Retrieve the processes of the manager**
+    // Returns:
+    //  - A const reference to the vector containing the names of all processes in the manager.
+    const std::vector<std::string>& getProcesses() const;
 
     // **Initialize all cores to idle (false)**
     // Params:
@@ -50,6 +55,9 @@ private:
     // **Vector to store the state of each core** 
     // true = busy, false = idle.
     std::vector<bool> core_states;
+
+    // **Vector to store the names of each processes in the manager**
+    std::vector<std::string> processes;
 
     // **Mutex to ensure thread-safe access to core states** 
     // Marked `mutable` to allow modification in const methods.

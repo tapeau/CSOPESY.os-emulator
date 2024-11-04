@@ -51,6 +51,11 @@ void ConsoleScreen::showAllProcesses(std::map<std::string, std::shared_ptr<Proce
  */
 void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, std::ostream& out)
 {
+    static std::mutex process_list_mutex;  // Mutex for thread safety
+
+    // Lock the mutex for the scope of this function
+    std::lock_guard<std::mutex> lock(process_list_mutex);
+    
     // If no processes are available, print a message and exit early.
     if (process_list.empty())
     {
@@ -62,6 +67,9 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
     std::stringstream ready, running, finished;
     int core_usage = 0;  // Tracks the number of CPU cores currently used.
 
+    // Retrive each process in the manager
+    const std::vector<std::string>& run = CoreStateManager::getInstance().getProcesses();
+
     // Retrieve the state of each core from CoreStateManager (singleton).
     const std::vector<bool>& core_states = CoreStateManager::getInstance().getCoreStates();
 
@@ -71,6 +79,24 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
         if (core_state)
         {
             core_usage++;
+        }
+    }
+
+    for (const std::string& name : run)
+    {
+        // Search for the process by name in the processList
+        auto it = process_list.find(name);
+        if (it != process_list.end())
+        {
+            // Check if process is found
+            const std::shared_ptr<Process>& process = it->second;  // Access the shared_ptr
+            std::stringstream temp;
+            temp << std::left << std::setw(30) << process->getName()
+                << " (" << process->getTime() << ") ";
+            temp << "  Core: " << process->getCPUCoreID() << "   "
+                << process->getCommandCounter() << " / "
+                << process->getLinesOfCode() << std::endl;
+            running << temp.str();  // Append to the running output
         }
     }
 
@@ -88,14 +114,14 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
              << " (" << process->getTime() << ") ";
 
         // Check the process state and format accordingly.
-        if (process->getState() == Process::READY)
-        {
-            temp << "  READY   "
-                 << process->getCommandCounter() << " / " 
-                 << process->getLinesOfCode() << std::endl;
-            ready << temp.str() << std::endl;  // Store in ready processes.
-        }
-        else if (process->getState() == Process::RUNNING)
+        // if (process->getState() == Process::READY)
+        // {
+        //     temp << "  READY   "
+        //          << process->getCommandCounter() << " / " 
+        //          << process->getLinesOfCode() << std::endl;
+        //     ready << temp.str() << std::endl;  // Store in ready processes.
+        // }
+        if (process->getState() == Process::RUNNING)
         {
             temp << "  Core: " << process->getCPUCoreID() << "   "
                  << process->getCommandCounter() << " / " 
@@ -109,7 +135,7 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
                  << process->getLinesOfCode() << std::endl;
             running << temp.str() << std::endl;  // Store in running processes.
         }
-        else
+        else if (process->getState() == Process::FINISHED)
         {
             temp << "  FINISHED   "
                  << process->getCommandCounter() << " / " 
@@ -125,9 +151,9 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
     out << "------------------------------------------------\n";
 
     // Print each category of processes.
-    out << "Ready Processes: \n" << ready.str();
-    std::cout << "==========================================\n";
-    out << "\nRunning Processes: \n" << running.str();
+    // out << "Ready Processes: \n" << ready.str();
+    // std::cout << "==========================================\n";
+    out << "Running Processes: \n" << running.str();
     std::cout << "==========================================\n";
     out << "\nFinished Processes: \n" << finished.str();
     out << "------------------------------------------------\n";
@@ -142,11 +168,10 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
  */
 void ConsoleScreen::showProcessUpdated(std::shared_ptr<Process> process)
 {
-    std::cout << BLUE << "Process: " << process->getName() << DEFAULT << std::endl;
-    std::cout << BLUE << "ID: " << process->getName() << DEFAULT << std::endl;
-    
-    if (process->getState() == Process::RUNNING)
+    if (process->getState() == Process::RUNNING || process->getState() == Process::READY)
     {
+        std::cout << BLUE << "Process: " << process->getName() << DEFAULT << std::endl;
+        std::cout << BLUE << "ID: " << process->getName() << DEFAULT << std::endl;
         std::cout << "Current instruction line: " << process->getCommandCounter() << std::endl;
         std::cout << "Lines of code: " << process->getLinesOfCode() << std::endl;
     }
