@@ -19,7 +19,7 @@ void ConsoleScreen::printHeader()
     "| |___ ___) | |_| |  __/| |___ ___) || |\n"
     " \\____|____/ \\___/|_|   |_____|____/ |_|\n\n"
     "------------------------------------------"
-    << GREEN << "Hello. Welcome to the CSOPESY Command Line!\n"
+    << GREEN << "\nHello. Welcome to the CSOPESY Command Line!\n"
     << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
     << "\n"
     << "Last updated: 11-03-2024\n"

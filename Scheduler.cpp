@@ -283,7 +283,6 @@ void Scheduler::scheduleRR(int core_id)
             else
             {
                 process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
-                CoreStateManager::getInstance().flipCoreState(core_id); // Mark the core as idle.
             }
 
             std::lock_guard<std::mutex> lock(active_threads_mutex);
@@ -291,6 +290,7 @@ void Scheduler::scheduleRR(int core_id)
 
             logActiveThreads(core_id, nullptr); // Log the thread state after completion.
             queue_condition.notify_all(); // Notify other threads of availability.
+            CoreStateManager::getInstance().flipCoreState(core_id); // Mark the core as idle.
         }
     }
 }
