@@ -82,24 +82,6 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
         }
     }
 
-    for (const std::string& name : run)
-    {
-        // Search for the process by name in the processList
-        auto it = process_list.find(name);
-        if (it != process_list.end())
-        {
-            // Check if process is found
-            const std::shared_ptr<Process>& process = it->second;  // Access the shared_ptr
-            std::stringstream temp;
-            temp << std::left << std::setw(30) << process->getName()
-                << " (" << process->getTime() << ") ";
-            temp << "  Core: " << process->getCPUCoreID() << "   "
-                << process->getCommandCounter() << " / "
-                << process->getLinesOfCode() << std::endl;
-            running << temp.str();  // Append to the running output
-        }
-    }
-
     // Begin displaying process information.
     out << "Existing Screens:" << std::endl;
 
