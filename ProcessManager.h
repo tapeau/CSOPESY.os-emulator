@@ -24,6 +24,9 @@ private:
     int min_instructions;        // Minimum number of instructions a process can generate.
     int max_instructions;        // Maximum number of instructions a process can generate.
     Clock* cpu_clock;            // CPU clock object
+    int max_overall_mem; //Overall memory in bytes
+    int mem_per_frame; //Size of memory in KB per frame. This is also the memory size per page
+    int mem_per_proc; //Fixed amount of memory per process
 
 public:
     /**
@@ -35,9 +38,13 @@ public:
      * @param scheduler_algorithm Scheduling algorithm to use (e.g., FCFS, Round-Robin).
      * @param delays_per_execution Number of delays allowed per execution.
      * @param quantum_cycle Time quantum (used for Round-Robin scheduling).
+     * @param max_overall_mem Overall memory in bytes.
+     * @param mem_per_frame Size of memory per frame/page.
+     * @param mem_per_proc Amount of memory per process.
      */
     ProcessManager(int min_instructions, int max_instructions, int cpu_count, 
-                   std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle, Clock* cpu_clock);
+                   std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle, Clock* cpu_clock,
+                   int max_overall_mem, int mem_per_frame, int mem_per_proc);
 
     /**
      * Adds a new process to the manager and schedules it.

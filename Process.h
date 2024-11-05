@@ -24,8 +24,8 @@ public:
      */
     struct RequirementFlags
     {
-        bool require_files;
-        int num_files;
+        // bool require_files;
+        // int num_files;
         bool require_memory;
         int memory_required;
     };
@@ -57,7 +57,7 @@ public:
      * @param max_instructions Maximum number of instructions the process can execute.
      */
     Process(int process_id, const std::string &process_name, const std::string &creation_time, 
-            int core_id, int min_instructions, int max_instructions);
+            int core_id, int min_instructions, int max_instructions, int memory_required);
 
     /**
      * @brief Executes the next command in the process’s command list.

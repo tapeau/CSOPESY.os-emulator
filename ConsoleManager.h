@@ -21,6 +21,9 @@ class ConsoleManager
     bool is_initialized = false; // Initialization status flag
     bool is_scheduler_running = false; // Scheduler running flag
     Clock* cpu_clock; // CPU clock object
+    int max_overall_mem; //Overall memory in bytes
+    int mem_per_frame; //Size of memory in KB per frame. This is also the memory size per page
+    int mem_per_proc; //Fixed amount of memory per process
 
 private:
     // Structure to store screen information

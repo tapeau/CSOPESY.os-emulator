@@ -4,9 +4,9 @@
 
 // Constructor implementation.
 Process::Process(int process_id, const std::string &process_name, const std::string &creation_time, 
-                 int core_id, int min_instructions, int max_instructions)
+                 int core_id, int min_instructions, int max_instructions, int memory_required)
     : process_id(process_id), process_name(process_name), creation_time(creation_time), 
-      core_id(core_id), process_state(READY) 
+      core_id(core_id), process_state(READY), requirement_flags{true, memory_required}
 {}
 
 // Executes the current command in the command list.
