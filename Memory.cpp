@@ -23,7 +23,8 @@ void Memory::initializeMemory()
 {
     // std::fill(memory.begin(), memory.end(), '.'); //'.' unallocated memory
     // std::fill(allocationMap.begin(), allocationMap.end(), false); //false all cuz free space
-
+    
+    //make sure memory and allocationmap are same sizes
     for (size_t i = 0; i < memory.size(); i++) {
         memory[i] = '.'; //unallocated memory
     }
