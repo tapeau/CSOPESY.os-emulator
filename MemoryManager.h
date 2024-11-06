@@ -2,7 +2,7 @@
 #include <Process.h>
 #include "Scheduler.h"
 
-// just made a class that can theoretically handle memory allocation, deallocation, and the snapshot requirement
+// just made a class that can theoretically handle memory allocation, deallocation, and the snapshot requirement.
 class MemoryManager
 {
 public:
