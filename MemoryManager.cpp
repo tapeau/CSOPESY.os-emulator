@@ -9,7 +9,7 @@ MemoryManager::MemoryManager(int total_size, int frame_size) : total_size(total_
 
 void MemoryManager::allocateMemory(Process &process)
 {
-    // probably a method we need, but i'm still kinda lost on this
+    // probably a method we need, but i'm still kinda lost on this.
 }
 
 int MemoryManager::firstFit()
