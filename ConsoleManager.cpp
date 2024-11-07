@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include "ConsoleManager.h"
+#include "MemoryManager.h"
 
 // Create a new screen session or reattach if it already exists
 void ConsoleManager::createScreen(const std::string &screen_name)
@@ -138,6 +139,10 @@ void ConsoleManager::processCommand(const std::string &command)
                 min_instructions, max_instructions, cpu_count, scheduler_algorithm, delays_per_execution, quantum_cycles, cpu_clock,
                 max_overall_mem, mem_per_frame, mem_per_proc
             );
+
+            // initializes FlatMemoryAllocator in MemoryManager
+            MemoryManager::getInstance()->initAllocator(max_overall_mem);
+
 
             is_initialized = true; // Set the initialized flag
             

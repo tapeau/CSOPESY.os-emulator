@@ -4,7 +4,7 @@
 
 // Constructor implementation.
 Process::Process(int process_id, const std::string &process_name, const std::string &creation_time, 
-                 int core_id, int min_instructions, int max_instructions, int memory_required)
+                 int core_id, int min_instructions, int max_instructions, size_t memory_required)
     : process_id(process_id), process_name(process_name), creation_time(creation_time), 
       core_id(core_id), process_state(READY), requirement_flags{true, memory_required}
 {}
@@ -22,6 +22,11 @@ void Process::executeCurrentCommand()
         // Increment the command counter to move to the next command.
         command_counter++;
     }
+}
+
+size_t Process::getMemReq() const
+{
+  return requirement_flags.memory_required;
 }
 
 // Returns the number of commands executed so far.
@@ -76,6 +81,11 @@ std::string Process::getName() const
 std::string Process::getTime() const
 {
     return creation_time;
+}
+
+bool Process::isAllocated() const
+{
+  return false;
 }
 
 // Generates a random number of print commands for the process.

@@ -27,8 +27,7 @@ public:
           core_id(core_id), 
           text_to_print(text_to_print), 
           process_name(process_name)
-    {
-    }
+    {}
 
     /**
      * Override the execute() function to perform the print command.

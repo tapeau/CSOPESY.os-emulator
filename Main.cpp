@@ -2,12 +2,15 @@
 #include <iostream>
 #include "ConsoleManager.h"
 #include "ConsoleScreen.h"
+#include "MemoryManager.h"
 
 int main()
 {
     ConsoleManager console_manager;
     ConsoleScreen console_screen;
     std::string user_command;
+
+    MemoryManager::initialize();
 
     system("cls"); // Clear the screen
     console_screen.printHeader(); // Display the header
@@ -24,6 +27,8 @@ int main()
             break;
         }
     }
+
+    MemoryManager::destroy();
 
     return 0;
 }

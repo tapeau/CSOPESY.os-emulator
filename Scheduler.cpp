@@ -5,6 +5,7 @@
 #include "Process.h" 
 #include "CoreStateManager.h"
 #include "Clock.h"
+#include "MemoryManager.h"
 
 // Constructor initializes the scheduler's state and member variables.
 Scheduler::Scheduler() : is_running(false), active_threads(0), debug_file("debug.txt"), ready_threads(0), cpu_clock(nullptr) {}
@@ -113,7 +114,6 @@ void Scheduler::scheduleFCFS()
     {
         std::shared_ptr<Process> process;
         int assigned_core = -1; // Core to which the process will be assigned.
-
         {
             std::unique_lock<std::mutex> lock(queue_mutex);
             // Wait until the queue is not empty or the scheduler stops running.
@@ -234,6 +234,11 @@ void Scheduler::scheduleRR(int core_id)
             if (!is_running) break; // Exit if the scheduler is stopped.
 
             process = process_queue.front(); // Get the first process from the queue.
+            void* memory = MemoryManager::getInstance()->getAllocator()->allocate(process->getMemReq());
+            if (memory != nullptr) {
+              std::cout << "Allocated mem for process " << process->getName() << " (ID: " << process->getPID() << ")\n";
+              std::cout << "Memory state: " << MemoryManager::getInstance()->getAllocator()->visualizeMemory() << "\n";
+            }
             process_queue.pop(); // Remove it from the queue.
         }
 

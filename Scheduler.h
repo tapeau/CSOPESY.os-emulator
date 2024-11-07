@@ -8,6 +8,8 @@
 #include <memory>
 #include <fstream>
 #include <string>
+#include "FlatMemoryAllocator.h"
+#include "IMemoryAllocator.h"
 #include "Clock.h"
 
 // Forward declaration of the Process class.
@@ -23,7 +25,7 @@ public:
     /**
      * @brief Constructor that initializes the scheduler.
      */
-    Scheduler(); 
+    Scheduler();
 
     /**
      * @brief Adds a process to the scheduling queue.
@@ -94,6 +96,12 @@ private:
      * @param current_process Shared pointer to the currently executing process.
      */
     void logActiveThreads(int core_id, std::shared_ptr<Process> current_process); 
+
+    /*
+     * Memory related declaration
+     */
+    // IMemoryAllocator& mem_alloc;
+    
 
     bool is_running; ///< Indicates whether the scheduler is currently running.
     int active_threads; ///< Number of threads currently executing processes.
