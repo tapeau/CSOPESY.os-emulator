@@ -1,6 +1,8 @@
 #pragma once
 #include <cstddef>
 #include <memory>
+#include <mutex>
+#include <set>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
@@ -23,7 +25,8 @@ class FlatMemoryAllocator : public IMemoryAllocator {
     std::vector<char> memory;
     std::unordered_map<size_t, bool> alloc_map;
     std::vector<std::shared_ptr<Process>> processes_in_mem;
-
+    // std::multiset<std::tuple<int, Process>> processes_in_mem;
+    std::mutex mem_mtx;
 
     void initializeMemory();
     bool canAllocAt(size_t index, size_t size) const; 

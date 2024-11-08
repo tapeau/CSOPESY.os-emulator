@@ -14,7 +14,7 @@ using namespace std;
 // The ProcessManager class manages the lifecycle of multiple processes and communicates with the scheduler.
 class ProcessManager
 {
-private:
+  private:
     // Map to store processes, where the key is the process name, and the value is a shared pointer to a Process object.
     map<string, std::shared_ptr<Process>> process_list;
 
@@ -28,7 +28,7 @@ private:
     int mem_per_frame; //Size of memory in KB per frame. This is also the memory size per page
     int mem_per_proc; //Fixed amount of memory per process
 
-public:
+  public:
     /**
      * Constructor for ProcessManager.
      * 
@@ -43,8 +43,8 @@ public:
      * @param mem_per_proc Amount of memory per process.
      */
     ProcessManager(int min_instructions, int max_instructions, int cpu_count, 
-                   std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle, Clock* cpu_clock,
-                   int max_overall_mem, int mem_per_frame, int mem_per_proc);
+        std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle, Clock* cpu_clock,
+        int max_overall_mem, int mem_per_frame, int mem_per_proc);
 
     /**
      * Adds a new process to the manager and schedules it.
@@ -75,11 +75,11 @@ public:
      */
     ~ProcessManager()
     {
-        // If the scheduler thread is still running, stop it before destruction.
-        if (scheduler_thread.joinable())
-        {
-            scheduler.stop();  // Signal the scheduler to stop.
-            scheduler_thread.join();  // Wait for the thread to finish.
-        }
+      // If the scheduler thread is still running, stop it before destruction.
+      if (scheduler_thread.joinable())
+      {
+        scheduler.stop();  // Signal the scheduler to stop.
+        scheduler_thread.join();  // Wait for the thread to finish.
+      }
     }
 };

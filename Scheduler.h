@@ -21,7 +21,7 @@ class Process;
  */
 class Scheduler
 {
-public:
+  public:
     /**
      * @brief Constructor that initializes the scheduler.
      */
@@ -72,7 +72,7 @@ public:
      */
     void setClock(Clock* cpu_clock); 
 
-private:
+  private:
     /**
      * @brief Main function executed by each worker thread.
      * @param core_id ID of the CPU core assigned to the thread.
@@ -101,7 +101,7 @@ private:
      * Memory related declaration
      */
     // IMemoryAllocator& mem_alloc;
-    
+
 
     bool is_running; ///< Indicates whether the scheduler is currently running.
     int active_threads; ///< Number of threads currently executing processes.
@@ -119,7 +119,7 @@ private:
     std::condition_variable queue_condition; ///< Condition variable for process queue updates.
 
     std::ofstream debug_file; ///< Output stream for logging debug information.
-    
+
     std::mutex start_mutex; ///< Mutex for synchronizing thread startup.
     std::condition_variable start_condition; ///< Condition variable to signal thread startup.
     Clock* cpu_clock; ///< CPU clock object to be used.

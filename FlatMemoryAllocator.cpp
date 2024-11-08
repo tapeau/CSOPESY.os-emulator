@@ -42,12 +42,23 @@ void FlatMemoryAllocator::initializeMemory()
 
 void* FlatMemoryAllocator::allocate(std::shared_ptr<Process> process)
 {
+  std::scoped_lock<std::mutex> lock(mem_mtx);
   size_t size = process->getMemReq();
   for (size_t i = 0; i < max_size - size + 1; ++i) {
     if (!alloc_map[i] && canAllocAt(i, size)) {
       allocAt(i, size);
       process->MemAlloc(i, i + size);
-      processes_in_mem.push_back(process);
+      // processes_in_mem.push_back(process);
+      // processes_in_mem.insert(processes_in_mem.begin() + j, process);
+      // for (int j = 0; j < processes_in_mem.size(); ++j) {
+      //   if (processes_in_mem[i]->getEndLoc() > process->getEndLoc()) {
+      //   }
+      //
+      auto it = std::lower_bound(processes_in_mem.begin(), processes_in_mem.end(), process,
+                                 [](const std::shared_ptr<Process>& p1, const std::shared_ptr<Process>& p2) {
+                                     return p1->getStartLoc() < p2->getStartLoc();
+                                 });
+      processes_in_mem.insert(it, process);    
       return &processes_in_mem.back();
     }
   }
@@ -65,10 +76,14 @@ void FlatMemoryAllocator::deallocAt(size_t index)
 
 void FlatMemoryAllocator::deallocate(std::shared_ptr<Process> process)
 {
+  // std::cout << "Before Deallocation: \n";
+  // std::cout << visualizeMemory();
+  std::scoped_lock<std::mutex> lock(mem_mtx);
   // finds the process if it exists in process_in_mem
   auto it = std::find(processes_in_mem.begin(), processes_in_mem.end(), process);
   if (it != processes_in_mem.end())
   {
+    process->MemDealloc();
     processes_in_mem.erase(it);
   }
   size_t index = process->getStartLoc();
@@ -78,6 +93,8 @@ void FlatMemoryAllocator::deallocate(std::shared_ptr<Process> process)
       index += 1;
     }
   }
+  // std::cout << "After Deallocation: \n";
+  // std::cout << visualizeMemory();
 }
 
 std::string FlatMemoryAllocator::visualizeMemory() {
@@ -88,7 +105,7 @@ std::string FlatMemoryAllocator::visualizeMemory() {
   str_stream << "Number of process in memory: " << processes_in_mem.size() << "\n";
   str_stream << "Total external fragmentation in KB: \n"; // << add some calculation for fragmentation here
   str_stream << "----end---- = " << max_size << "\n";
-    for (int i = processes_in_mem.size() - 1; i >= 0; --i) {
+  for (int i = processes_in_mem.size() - 1; i >= 0; --i) {
       std::shared_ptr<Process> curr_process = processes_in_mem[i];
       str_stream << "\n" << curr_process->getEndLoc()
         << "\n" << curr_process->getName() 
@@ -96,6 +113,15 @@ std::string FlatMemoryAllocator::visualizeMemory() {
         << "\n";
   }
   str_stream << "----start---- = " << 0 << "\n"; 
+  str_stream << "\n";
+
+  // str_stream << "----end---- = " << max_size << "\n";
+  // str_stream << "\n";
+  // for (auto& elem : alloc_map) {
+  //   str_stream << "Mem: " << elem.first << " allocated: " << elem.second << "\n";
+  // }
+  // str_stream << "----start---- = " << 0 << "\n"; 
+  // str_stream << "\n";
 
   return std::string(str_stream.str());
 }
