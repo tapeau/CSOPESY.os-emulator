@@ -1,3 +1,4 @@
+#include <cstddef>
 #include <cstdlib>
 #include <random>
 #include "Process.h"
@@ -85,7 +86,35 @@ std::string Process::getTime() const
 
 bool Process::isAllocated() const
 {
-  return false;
+  // if start_loc and end_loc are the same then process is not allocated
+  // since both vars are initialized at 0
+  return (start_loc == end_loc);
+}
+
+// void Process::processSetInMem(bool in_mem)
+// {
+//   this->in_mem = in_mem;
+// }
+
+void Process::MemDealloc()
+{
+  start_loc = end_loc = 0;
+}
+
+size_t Process::getStartLoc() const
+{
+  return start_loc;
+}
+
+size_t Process::getEndLoc() const
+{
+  return end_loc;
+}
+
+void Process::MemAlloc(size_t start_loc, size_t end_loc)
+{
+  this->start_loc = start_loc;
+  this->end_loc = end_loc;
 }
 
 // Generates a random number of print commands for the process.

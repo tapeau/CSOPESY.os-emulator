@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdlib>
+#include <string>
 #include "ConsoleManager.h"
 #include "MemoryManager.h"
 
@@ -28,6 +29,19 @@ void ConsoleManager::createScreen(const std::string &screen_name)
     // Display the newly created process on the screen
     process_manager->getProcess(screen_name);
     screen_manager.showScreen(process_manager->getProcess(screen_name));
+}
+
+/*
+ * DEBUGGING PURPOSES:
+ * call this after initialize if you want to simulate process execution of n processes
+ */
+
+void ConsoleManager::generateProcesses(int num_process)
+{
+  std::string process_prefix = "Process_";
+  for (int i = 0; i < num_process; ++i) {
+    process_manager->addProcess(process_prefix + std::to_string(i), screen_manager.getCurrentTimestamp());
+  }
 }
 
 // Generate a new session without displaying it immediately (silently)
@@ -141,11 +155,12 @@ void ConsoleManager::processCommand(const std::string &command)
             );
 
             // initializes FlatMemoryAllocator in MemoryManager
-            MemoryManager::getInstance()->initAllocator(max_overall_mem);
+            MemoryManager::getInstance().initAllocator(max_overall_mem);
 
 
             is_initialized = true; // Set the initialized flag
-            
+            // Debugging Purposes (generates <param> processes)
+            generateProcesses(4);
         }
         else
         {

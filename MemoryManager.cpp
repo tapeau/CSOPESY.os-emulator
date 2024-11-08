@@ -1,33 +1,10 @@
 #include <ctime>
+#include <memory>
 #include "MemoryManager.h"
 #include "FlatMemoryAllocator.h"
 #include "IMemoryAllocator.h"
 
-MemoryManager* MemoryManager::sharedInstance = nullptr;
-
-MemoryManager* MemoryManager::getInstance() 
-{
-    if (sharedInstance == nullptr) 
-    {
-        sharedInstance = new MemoryManager();
-    }
-    return sharedInstance;
-}
-
-void MemoryManager::initialize()
-{
-    // sharedInstance = new MemoryManager();
-    if (sharedInstance == nullptr) {
-        sharedInstance = new MemoryManager();
-    } else {
-        std::cerr << "MemoryManager already initialized." << std::endl;
-    }
-}
-
-void MemoryManager::destroy()
-{
-    delete sharedInstance;
-}
+// MemoryManager* MemoryManager::sharedInstance = nullptr;
 
 // void MemoryManager::allocateMemory(Process &process)
 // {
@@ -36,14 +13,19 @@ void MemoryManager::destroy()
 
 void MemoryManager::initAllocator(size_t size)
 {
-  mem_alloc = new FlatMemoryAllocator(size);
+  mem_allocator = std::make_shared<FlatMemoryAllocator>(size);
 }
 
 
-IMemoryAllocator* MemoryManager::getAllocator()
+std::shared_ptr<IMemoryAllocator> MemoryManager::getAllocator()
 {
-  return mem_alloc;
+  return mem_allocator;
 }
+
+// IMemoryAllocator* MemoryManager::getAllocator()
+// {
+//   return mem_alloc;
+// }
 
 // int MemoryManager::firstFit()
 // {

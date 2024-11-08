@@ -46,4 +46,5 @@ public:
     void showAllScreens();
     void reportUtilization();
     void processCommand(const std::string &command);
+    void generateProcesses(int num_process); // command to generate processes mainly for debugging 
 };

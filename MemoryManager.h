@@ -1,37 +1,36 @@
 #include <memory>
 #include <vector>
 #include "IMemoryAllocator.h"
-#include "Process.h"
 #include "Scheduler.h"
 
 // just made a class that can theoretically handle memory allocation, deallocation, and the snapshot requirement.
+/*
+ * Singleton Implementation from: 
+ * https://stackoverflow.com/questions/1008019/how-do-you-implement-the-singleton-design-pattern
+ */
+
 class MemoryManager
 {
   public:
-    static MemoryManager* getInstance();
-    static void initialize();
-    static void destroy();
+    static MemoryManager& getInstance()
+    {
+      static MemoryManager instance;
 
-    IMemoryAllocator* getAllocator();
+      return instance;
+    }
+    static void destroy();
+    std::shared_ptr<IMemoryAllocator> getAllocator();
     // void freeMemory(int process_id);
     // void allocateMemory(Process &process);
     // void generateSnapshot(int quantum_cycle);
     void initAllocator(size_t size);
+    // void printMemory() const;
 
   private:
-    MemoryManager();
-    ~MemoryManager() = default;
-    MemoryManager(MemoryManager const&) {};
-    MemoryManager& operator=(MemoryManager const&) {return *this;};
-    static MemoryManager* sharedInstance;
+    MemoryManager() {};
+    MemoryManager(MemoryManager const&);  // Don't Implement
+    void operator=(MemoryManager const&); // Don't implement
 
-    IMemoryAllocator* mem_alloc;
-
-    int total_size;
-    int frame_size;
-    std::vector<int> memory;  // a vector that can represent memory blocks?
-
-    int firstFit();
-    int calculateFragmentation();
-    int countProcesses();
+    // IMemoryAllocator* mem_alloc;
+    std::shared_ptr<IMemoryAllocator> mem_allocator;
 };

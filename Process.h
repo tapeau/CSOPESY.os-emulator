@@ -127,6 +127,15 @@ public:
 
     bool isAllocated() const;
 
+    /*
+     * Methods related to memory
+     * Alloc and Dealloc are being managed by the memory allocator
+     */ 
+    size_t getStartLoc() const;
+    size_t getEndLoc() const;
+    void MemDealloc();
+    void MemAlloc(size_t start_loc, size_t end_loc);
+
 private:
     int process_id;  // Unique identifier for the process.
     std::string process_name;  // Name of the process.
@@ -137,4 +146,8 @@ private:
     int core_id;  // ID of the CPU core assigned to the process.
     RequirementFlags requirement_flags;  // Flags indicating the resource requirements of the process.
     ProcessState process_state;  // Current state of the process.
+
+    // 
+    size_t start_loc = 0; // memory start location
+    size_t end_loc = 0;  // memory end location
 };

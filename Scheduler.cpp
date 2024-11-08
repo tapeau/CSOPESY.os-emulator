@@ -224,8 +224,10 @@ void Scheduler::scheduleRR(int core_id)
 {
     while (is_running)
     {
-        std::shared_ptr<Process> process;
-
+      std::shared_ptr<Process> process;
+      /*
+       * Process Allocation
+       */
         {
             std::unique_lock<std::mutex> lock(queue_mutex);
             // Wait until the queue is not empty or the scheduler stops running.
@@ -234,10 +236,14 @@ void Scheduler::scheduleRR(int core_id)
             if (!is_running) break; // Exit if the scheduler is stopped.
 
             process = process_queue.front(); // Get the first process from the queue.
-            void* memory = MemoryManager::getInstance()->getAllocator()->allocate(process->getMemReq());
+            void* memory = MemoryManager::getInstance().getAllocator()->allocate(process); // memory returns nullptr if it cannot allocate the process in memory
             if (memory != nullptr) {
               std::cout << "Allocated mem for process " << process->getName() << " (ID: " << process->getPID() << ")\n";
-              std::cout << "Memory state: " << MemoryManager::getInstance()->getAllocator()->visualizeMemory() << "\n";
+              // std::cout << "Memory state: " << MemoryManager::getInstance().getAllocator()->visualizeMemory() << "\n";
+            } else {
+              std::cout <<" Insufficient memory for process " << process->getName() << "(ID: " << process->getPID() << ")\n";
+
+              // else statment is when memory is insufficient, therefore we cannot execute the process and just loop again.
             }
             process_queue.pop(); // Remove it from the queue.
         }
@@ -268,6 +274,9 @@ void Scheduler::scheduleRR(int core_id)
 
             // Execute the process for a time slice (quantum).
             int quantum = 0;
+            /*
+             * Process Execution
+             */
             while (process->getCommandCounter() < process->getLinesOfCode() && quantum < quantum_cycle)
             {
                 if (delay_per_execution != 0)
@@ -307,7 +316,12 @@ void Scheduler::scheduleRR(int core_id)
                     }
                 }
             }
+            // std::cout << "quantum: " << quantum << "=? " << "quantum_cycle: " << quantum_cycle << "\n";
 
+            if (quantum_cycle == quantum) {
+              std::cout << MemoryManager::getInstance().getAllocator()->visualizeMemory();
+              // std::cout << "quantum: " << quantum << "== " << "quantum_cycle: " << quantum_cycle << "\n";
+            }
             // If the process is not finished, put it back in the queue.
             if (process->getCommandCounter() < process->getLinesOfCode())
             {
@@ -317,8 +331,10 @@ void Scheduler::scheduleRR(int core_id)
             }
             else
             {
+                // MemoryManager::getInstance().getAllocator()->deallocate(process);
                 process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
             }
+            MemoryManager::getInstance().getAllocator()->deallocate(process);
 
             std::lock_guard<std::mutex> lock(active_threads_mutex);
             active_threads--; // Decrement the active thread count.

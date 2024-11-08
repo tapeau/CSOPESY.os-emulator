@@ -10,7 +10,7 @@ int main()
     ConsoleScreen console_screen;
     std::string user_command;
 
-    MemoryManager::initialize();
+    // MemoryManager::initialize();
 
     system("cls"); // Clear the screen
     console_screen.printHeader(); // Display the header
@@ -27,8 +27,6 @@ int main()
             break;
         }
     }
-
-    MemoryManager::destroy();
 
     return 0;
 }
