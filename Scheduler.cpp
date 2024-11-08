@@ -1,6 +1,7 @@
 #include <iostream>
 #include <chrono>
 #include <iomanip>
+#include <thread>
 #include <unistd.h>
 #include "Scheduler.h"
 #include "Process.h" 
@@ -240,10 +241,11 @@ void Scheduler::scheduleRR(int core_id)
       void* memory = MemoryManager::getInstance().getAllocator()->allocate(process); // memory returns nullptr if it cannot allocate the process in memory
       if (memory != nullptr) { // if process is successfully allocated in memory 
                                // std::cout << "Allocated mem for process " << process->getName() << " (ID: " << process->getPID() << ")\n";
-        process_queue.pop(); // Remove it from the queue.
+        process_queue.pop();   // Remove it from the queue.
       } else {
         // std::cout <<" Insufficient memory for process " << process->getName() << "(ID: " << process->getPID() << ")\n";
         // else statment is when memory is insufficient, therefore we cannot execute the process and just loop again.
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         continue;
       }
     }
@@ -322,7 +324,7 @@ void Scheduler::scheduleRR(int core_id)
       // std::cout << "quantum: " << quantum << "=? " << "quantum_cycle: " << quantum_cycle << "\n";
 
       // if (quantum_cycle == quantum) {
-      //   std::cout << MemoryManager::getInstance().getAllocator()->visualizeMemory();
+        // std::cout << MemoryManager::getInstance().getAllocator()->visualizeMemory();
       // }
 
       // If the process is not finished, put it back in the queue.
@@ -338,10 +340,11 @@ void Scheduler::scheduleRR(int core_id)
         process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
       }
 
+      MemoryManager::getInstance().getAllocator()->deallocate(process);
+
       std::lock_guard<std::mutex> lock(active_threads_mutex);
       active_threads--; // Decrement the active thread count.
 
-      MemoryManager::getInstance().getAllocator()->deallocate(process);
       logActiveThreads(core_id, nullptr); // Log the thread state after completion.
       queue_condition.notify_all(); // Notify other threads of availability.
       CoreStateManager::getInstance().flipCoreState(core_id, ""); // Mark the core as idle.

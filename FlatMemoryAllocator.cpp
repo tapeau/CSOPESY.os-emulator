@@ -3,7 +3,9 @@
 #include <iostream>
 #include <iterator>
 #include <memory>
+#include <mutex>
 #include <sstream>
+#include <string>
 
 FlatMemoryAllocator::FlatMemoryAllocator(size_t max_size) : max_size(max_size), alloc_size(0) {
   memory.reserve(max_size);
@@ -18,6 +20,7 @@ FlatMemoryAllocator::~FlatMemoryAllocator()
 
 bool FlatMemoryAllocator::canAllocAt(size_t index, size_t size) const
 {
+  // check bounds to ensure index + size cannot exceed max_size
   return (index + size <= max_size);
 }
 
@@ -47,13 +50,9 @@ void* FlatMemoryAllocator::allocate(std::shared_ptr<Process> process)
   for (size_t i = 0; i < max_size - size + 1; ++i) {
     if (!alloc_map[i] && canAllocAt(i, size)) {
       allocAt(i, size);
+      // DEBUGGING PURPOSES:
+      // std::cout << process->getName() << ", successfully allocated at " << std::to_string(i) << "~" + std::to_string(i+size) << "\n"; 
       process->MemAlloc(i, i + size);
-      // processes_in_mem.push_back(process);
-      // processes_in_mem.insert(processes_in_mem.begin() + j, process);
-      // for (int j = 0; j < processes_in_mem.size(); ++j) {
-      //   if (processes_in_mem[i]->getEndLoc() > process->getEndLoc()) {
-      //   }
-      //
       auto it = std::lower_bound(processes_in_mem.begin(), processes_in_mem.end(), process,
                                  [](const std::shared_ptr<Process>& p1, const std::shared_ptr<Process>& p2) {
                                      return p1->getStartLoc() < p2->getStartLoc();
@@ -83,7 +82,6 @@ void FlatMemoryAllocator::deallocate(std::shared_ptr<Process> process)
   auto it = std::find(processes_in_mem.begin(), processes_in_mem.end(), process);
   if (it != processes_in_mem.end())
   {
-    process->MemDealloc();
     processes_in_mem.erase(it);
   }
   size_t index = process->getStartLoc();
@@ -93,6 +91,7 @@ void FlatMemoryAllocator::deallocate(std::shared_ptr<Process> process)
       index += 1;
     }
   }
+  process->MemDealloc();
   // std::cout << "After Deallocation: \n";
   // std::cout << visualizeMemory();
 }
