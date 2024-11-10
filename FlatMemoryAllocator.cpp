@@ -96,13 +96,41 @@ void FlatMemoryAllocator::deallocate(std::shared_ptr<Process> process)
   // std::cout << visualizeMemory();
 }
 
+int FlatMemoryAllocator::compexternalFrag()
+{
+  size_t low = 0;
+  size_t up = 0;
+  size_t extfrag = 0;
+
+  if(processes_in_mem.empty()){
+    return 0;
+  }
+
+  for (int i = processes_in_mem.size() - 1; i >= 0; --i) {
+      // std::shared_ptr<Process> curr_process = processes_in_mem[i];
+      low = processes_in_mem[i]->getStartLoc();
+      up = processes_in_mem[i-1]->getEndLoc();
+
+      if (low < up){
+      extfrag += (low - up);
+      }
+  }
+
+  return extfrag;
+}
+
 std::string FlatMemoryAllocator::visualizeMemory() {
   // printMemMap();
+  auto now = std::chrono::system_clock::now(); // Get the current time.
+  auto now_c = std::chrono::system_clock::to_time_t(now); // Convert to time_t.
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+
   std::stringstream str_stream;
   str_stream << "\n";
-  str_stream << "Timestamp: " << "(MM/DD/YYYY HH:MM:YY)\n";
+  // str_stream << "Timestamp: " << "(MM/DD/YYYY HH:MM:YY)\n";
+  str_stream << "Timestamp: " << std::put_time(std::localtime(&now_c), "%m-%d-%Y %H:%M:%S %p");
   str_stream << "Number of process in memory: " << processes_in_mem.size() << "\n";
-  str_stream << "Total external fragmentation in KB: \n"; // << add some calculation for fragmentation here
+  str_stream << "Total external fragmentation in KB: " << compexternalFrag() << "\n"; // << add some calculation for fragmentation here
   str_stream << "----end---- = " << max_size << "\n";
   for (int i = processes_in_mem.size() - 1; i >= 0; --i) {
       std::shared_ptr<Process> curr_process = processes_in_mem[i];

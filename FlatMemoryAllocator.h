@@ -32,4 +32,5 @@ class FlatMemoryAllocator : public IMemoryAllocator {
     bool canAllocAt(size_t index, size_t size) const; 
     void allocAt(size_t index, size_t size);
     void deallocAt(size_t index);
+    int compexternalFrag();
 };
