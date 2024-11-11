@@ -107,7 +107,9 @@ int FlatMemoryAllocator::compexternalFrag()
   for (int i = processes_in_mem.size() - 1; i >= 0; --i) {
       // std::shared_ptr<Process> curr_process = processes_in_mem[i];
       low = processes_in_mem[i]->getStartLoc();
-      up = processes_in_mem[i-1]->getEndLoc();
+      if (i > 0) {
+        up = processes_in_mem[i-1]->getEndLoc();
+      }
 
       if (i == 0) {
         extfrag += low;

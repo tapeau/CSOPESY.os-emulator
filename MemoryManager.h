@@ -8,7 +8,7 @@
  * https://stackoverflow.com/questions/1008019/how-do-you-implement-the-singleton-design-pattern
  */
 
-constexpr std::string FILE_NAME_PREFIX = "memory_stamp_";
+const std::string FILE_NAME_PREFIX = "memory_stamp_";
 
 class MemoryManager
 {
