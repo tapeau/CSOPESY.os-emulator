@@ -96,8 +96,8 @@ void FlatMemoryAllocator::deallocate(std::shared_ptr<Process> process)
 
 int FlatMemoryAllocator::compexternalFrag()
 {
-  size_t low = 0;
-  size_t up = 0;
+  int low = 0;
+  int up = 0;
   size_t extfrag = 0;
 
   if (processes_in_mem.empty()){
@@ -109,8 +109,10 @@ int FlatMemoryAllocator::compexternalFrag()
       low = processes_in_mem[i]->getStartLoc();
       up = processes_in_mem[i-1]->getEndLoc();
 
-      if (low < up){
-        extfrag += (low - up);
+      if (i == 0) {
+        extfrag += low;
+      } else {
+        extfrag += low - up;
       }
   }
 
@@ -137,8 +139,8 @@ std::string FlatMemoryAllocator::visualizeMemory() {
         << "\n" << curr_process->getStartLoc()
         << "\n";
   }
-  str_stream << "----start---- = " << 0 << "\n"; 
   str_stream << "\n";
+  str_stream << "----start---- = " << 0 << "\n"; 
 
   // str_stream << "----end---- = " << max_size << "\n";
   // str_stream << "\n";
