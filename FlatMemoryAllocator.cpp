@@ -1,7 +1,5 @@
 #include "FlatMemoryAllocator.h"
-// #include <ostream>
 #include <iostream>
-#include <iterator>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -37,7 +35,7 @@ void FlatMemoryAllocator::allocAt(size_t index, size_t size)
 void FlatMemoryAllocator::initializeMemory()
 {
   // std::fill(memory.begin(), memory.end(), '.'); // '.' represents unallocated memory
-                                                // initialize all existing elements in alloc_map to false
+  // initialize all existing elements in alloc_map to false
   for (auto& elem : alloc_map) {
     elem.second = false;
   }
@@ -102,7 +100,7 @@ int FlatMemoryAllocator::compexternalFrag()
   size_t up = 0;
   size_t extfrag = 0;
 
-  if(processes_in_mem.empty()){
+  if (processes_in_mem.empty()){
     return 0;
   }
 
@@ -112,7 +110,7 @@ int FlatMemoryAllocator::compexternalFrag()
       up = processes_in_mem[i-1]->getEndLoc();
 
       if (low < up){
-      extfrag += (low - up);
+        extfrag += (low - up);
       }
   }
 
@@ -128,7 +126,7 @@ std::string FlatMemoryAllocator::visualizeMemory() {
   std::stringstream str_stream;
   str_stream << "\n";
   // str_stream << "Timestamp: " << "(MM/DD/YYYY HH:MM:YY)\n";
-  str_stream << "Timestamp: " << std::put_time(std::localtime(&now_c), "%m-%d-%Y %H:%M:%S %p");
+  str_stream << "Timestamp: " << std::put_time(std::localtime(&now_c), "%m-%d-%Y %H:%M:%S %p") << "\n";
   str_stream << "Number of process in memory: " << processes_in_mem.size() << "\n";
   str_stream << "Total external fragmentation in KB: " << compexternalFrag() << "\n"; // << add some calculation for fragmentation here
   str_stream << "----end---- = " << max_size << "\n";

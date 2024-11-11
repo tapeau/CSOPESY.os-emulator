@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <mutex>
+#include <string>
 
 // **CoreStateManager Class** 
 // Manages the state (busy/idle) of multiple CPU cores using a Singleton pattern.

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <memory>
 #include <string>
 #include <vector>
 #include "ICommand.h"
@@ -144,8 +143,8 @@ private:
 
     int command_counter = 0;  // Counter for the number of executed commands.
     int core_id;  // ID of the CPU core assigned to the process.
-    RequirementFlags requirement_flags;  // Flags indicating the resource requirements of the process.
     ProcessState process_state;  // Current state of the process.
+    RequirementFlags requirement_flags;  // Flags indicating the resource requirements of the process.
 
     // 
     size_t start_loc = 0; // memory start location

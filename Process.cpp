@@ -1,5 +1,3 @@
-#include <cstddef>
-#include <cstdlib>
 #include <random>
 #include "Process.h"
 
@@ -8,7 +6,10 @@ Process::Process(int process_id, const std::string &process_name, const std::str
     int core_id, int min_instructions, int max_instructions, size_t memory_required)
   : process_id(process_id), process_name(process_name), creation_time(creation_time), 
   core_id(core_id), process_state(READY), requirement_flags{true, memory_required}
-{}
+{
+  std::string file_path = process_name + ".txt";
+  std::remove(file_path.c_str());
+}
 
 // Executes the current command in the command list.
 void Process::executeCurrentCommand()

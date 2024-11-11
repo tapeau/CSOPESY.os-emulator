@@ -161,7 +161,7 @@ void ConsoleManager::processCommand(const std::string &command)
 
       is_initialized = true; // Set the initialized flag
                              // Debugging Purposes (generates <param> processes)
-      generateProcesses(4);
+      // generateProcesses(4);
     }
     else
     {

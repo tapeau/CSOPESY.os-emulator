@@ -1,8 +1,6 @@
 #include <iostream>
 #include <chrono>
 #include <iomanip>
-#include <thread>
-#include <unistd.h>
 #include "Scheduler.h"
 #include "Process.h" 
 #include "CoreStateManager.h"

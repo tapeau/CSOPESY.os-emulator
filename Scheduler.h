@@ -103,12 +103,17 @@ class Scheduler
     // IMemoryAllocator& mem_alloc;
 
 
+    // reordered variable declaration according to Constructor to prevent 
+    // -Wreorder error when compiling with cc -Wextra flags
     bool is_running; ///< Indicates whether the scheduler is currently running.
     int active_threads; ///< Number of threads currently executing processes.
+    std::ofstream debug_file; ///< Output stream for logging debug information.
+    int ready_threads; ///< Number of threads ready to execute processes.
+    Clock* cpu_clock; ///< CPU clock object to be used.
+
     int cpu_count; ///< Total number of available CPUs.
     int delay_per_execution; ///< Execution delay per command in milliseconds.
     int quantum_cycle; ///< Time slice for Round Robin scheduling in milliseconds.
-    int ready_threads; ///< Number of threads ready to execute processes.
     std::string scheduler_algorithm; ///< Name of the selected scheduling algorithm.
 
     std::queue<std::shared_ptr<Process>> process_queue; ///< Queue holding the processes to be executed.
@@ -118,9 +123,7 @@ class Scheduler
     std::mutex active_threads_mutex; ///< Mutex for synchronizing the active thread count.
     std::condition_variable queue_condition; ///< Condition variable for process queue updates.
 
-    std::ofstream debug_file; ///< Output stream for logging debug information.
 
     std::mutex start_mutex; ///< Mutex for synchronizing thread startup.
     std::condition_variable start_condition; ///< Condition variable to signal thread startup.
-    Clock* cpu_clock; ///< CPU clock object to be used.
 };
