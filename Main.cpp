@@ -13,7 +13,7 @@ int main()
     // MemoryManager::initialize();
 
     system("cls"); // Clear the screen
-    console_screen.printHeader(); // Display the header
+    console_screen.printHeaderUsingHandle(); // Display the header
 
     // Infinite loop for continuous user_command polling
     while (true)

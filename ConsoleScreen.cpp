@@ -1,11 +1,38 @@
 #include "ConsoleScreen.h"
 #include "CoreStateManager.h"
+#include <windows.h>
 
 // ANSI escape sequences for terminal text coloring.
 const char DEFAULT[] = "\033[0m";  // Resets the color back to default.
 const char BLUE[] = "\033[36m";    // Cyan/Blue-colored text.
 const char GREEN[] = "\033[32m";   // Green-colored text.
 
+
+/*
+ * Gonna use this for demo since in Linux cannot 
+ */
+void ConsoleScreen::printHeaderUsingHandle() const
+{
+    HANDLE console_handle = GetStdHandle(STD_OUTPUT_HANDLE);
+    std::cerr << 
+    "  ____ ____   ___  ____  _____ ______   __\n"
+    " / ___/ ___| / _ \\|  _ \\| ____/ ___\\ \\ / /\n"
+    "| |   \\___ \\| | | | |_) |  _| \\___ \\\\ V / \n"
+    "| |___ ___) | |_| |  __/| |___ ___) || |\n"
+    " \\____|____/ \\___/|_|   |_____|____/ |_|\n\n"
+    "------------------------------------------\n";
+    SetConsoleTextAttribute(console_handle, 10);
+    std::cerr << "Hello. Welcome to the CSOPESY Command Line!\n\n"
+    << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" 
+    << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
+    << "\n"
+    << "Last updated: 11-04-2024\n";
+    SetConsoleTextAttribute(console_handle, 7);
+    std::cerr << "------------------------------------------\n";
+    SetConsoleTextAttribute(console_handle, 14);
+    std::cerr << "Type 'exit' to quit, 'clear' to clear the screen \n"; 
+    SetConsoleTextAttribute(console_handle, 7);
+}
 /**
  * Displays the header information at the start of the program.
  * This includes a welcome banner and some instructions for the user.
@@ -194,7 +221,7 @@ void ConsoleScreen::showScreen(std::shared_ptr<Process> process)
         else if (command == "exit")
         {
             system("cls");  // Clear the console.
-            printHeader();  // Reprint the header.
+            printHeaderUsingHandle();  // Reprint the header.
             break;
         }
         else

@@ -22,6 +22,9 @@ public:
     // Displays the header information on the console.
     void printHeader();
 
+    // Displays the header information on the console using Windows.h for colors.
+    void printHeaderUsingHandle() const;
+
     // Displays all processes in the given map.
     void showAllProcesses(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count);
 

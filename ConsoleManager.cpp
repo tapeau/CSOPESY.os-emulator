@@ -110,7 +110,7 @@ void ConsoleManager::processCommand(const std::string &command)
   if (command == "initialize" || command == "init")
   {
     system("cls"); // Clear console
-    screen_manager.printHeader(); // Display application header
+    screen_manager.printHeaderUsingHandle(); // Display application header
 
     std::ifstream config_file("config.txt"); // Open configuration file
 
@@ -264,7 +264,7 @@ void ConsoleManager::processCommand(const std::string &command)
   else if (command == "clear")
   {
     system("cls");
-    screen_manager.printHeader();
+    screen_manager.printHeaderUsingHandle();
   }
   // Exit the application
   else if (command == "exit")
