@@ -1,5 +1,6 @@
 #pragma once
 
+#include <mutex>
 #include <string>
 #include <vector>
 #include "ICommand.h"
@@ -80,6 +81,7 @@ public:
      */
     int getCPUCoreID() const;
 
+    bool hasFinished() const;
     /**
      * @brief Sets the CPU core ID for the process.
      * @param core_id New CPU core ID to assign.
@@ -126,14 +128,15 @@ public:
 
     bool isAllocated() const;
 
+
     /*
      * Methods related to memory
      * Alloc and Dealloc are being managed by the memory allocator
      */ 
     size_t getStartLoc() const;
     size_t getEndLoc() const;
-    void MemDealloc();
-    void MemAlloc(size_t start_loc, size_t end_loc);
+    void memDealloc();
+    void memAlloc(size_t start_loc, size_t end_loc);
 
 private:
     int process_id;  // Unique identifier for the process.
@@ -141,12 +144,12 @@ private:
     std::string creation_time;  // Time the process was created.
     std::vector<std::shared_ptr<ICommand>> command_list;  // List of commands the process will execute.
 
-    int command_counter = 0;  // Counter for the number of executed commands.
+    size_t command_counter = 0;  // Counter for the number of executed commands.
     int core_id;  // ID of the CPU core assigned to the process.
     ProcessState process_state;  // Current state of the process.
     RequirementFlags requirement_flags;  // Flags indicating the resource requirements of the process.
 
-    // 
     size_t start_loc = 0; // memory start location
     size_t end_loc = 0;  // memory end location
+
 };

@@ -21,11 +21,10 @@ class FlatMemoryAllocator : public IMemoryAllocator {
 
   private:
     size_t max_size;
-    size_t alloc_size;
+    size_t alloc_size; // still not sure what this is for? maybe to keep track of used mem space 
     std::vector<char> memory;
     std::unordered_map<size_t, bool> alloc_map;
     std::vector<std::shared_ptr<Process>> processes_in_mem;
-    // std::multiset<std::tuple<int, Process>> processes_in_mem;
     std::mutex mem_mtx;
 
     void initializeMemory();

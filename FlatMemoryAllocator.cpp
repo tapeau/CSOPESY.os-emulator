@@ -29,7 +29,7 @@ void FlatMemoryAllocator::allocAt(size_t index, size_t size)
   for (int i = index; i < index + size; ++i) {
     alloc_map[i] = true;
   }
-  alloc_size += size;
+  // alloc_size += size;
 }
 
 void FlatMemoryAllocator::initializeMemory()
@@ -43,14 +43,14 @@ void FlatMemoryAllocator::initializeMemory()
 
 void* FlatMemoryAllocator::allocate(std::shared_ptr<Process> process)
 {
-  std::scoped_lock<std::mutex> lock(mem_mtx);
   size_t size = process->getMemReq();
   for (size_t i = 0; i < max_size - size + 1; ++i) {
-    if (!alloc_map[i] && canAllocAt(i, size)) {
+    if (!alloc_map[i] && canAllocAt(i, size) && !process->isAllocated()) {
+      std::scoped_lock<std::mutex> lock(mem_mtx);
       allocAt(i, size);
       // DEBUGGING PURPOSES:
       // std::cout << process->getName() << ", successfully allocated at " << std::to_string(i) << "~" + std::to_string(i+size) << "\n"; 
-      process->MemAlloc(i, i + size);
+      process->memAlloc(i, i + size);
       auto it = std::lower_bound(processes_in_mem.begin(), processes_in_mem.end(), process,
                                  [](const std::shared_ptr<Process>& p1, const std::shared_ptr<Process>& p2) {
                                      return p1->getStartLoc() < p2->getStartLoc();
@@ -73,25 +73,19 @@ void FlatMemoryAllocator::deallocAt(size_t index)
 
 void FlatMemoryAllocator::deallocate(std::shared_ptr<Process> process)
 {
-  // std::cout << "Before Deallocation: \n";
-  // std::cout << visualizeMemory();
-  std::scoped_lock<std::mutex> lock(mem_mtx);
   // finds the process if it exists in process_in_mem
+  std::lock_guard<std::mutex> lock(mem_mtx);
   auto it = std::find(processes_in_mem.begin(), processes_in_mem.end(), process);
-  if (it != processes_in_mem.end())
-  {
+  if (it != processes_in_mem.end()) {
     processes_in_mem.erase(it);
   }
-  size_t index = process->getStartLoc();
-  for (size_t i = 0 ; i < process->getMemReq(); ++i) {
-    if (alloc_map[index]) {
-      deallocAt(index);
-      index += 1;
+
+  for (size_t i = process->getStartLoc(); i < process->getEndLoc(); ++i) {
+    if (alloc_map[i]) {
+      deallocAt(i);
     }
   }
-  process->MemDealloc();
-  // std::cout << "After Deallocation: \n";
-  // std::cout << visualizeMemory();
+  process->memDealloc(); // marks process as deallocated
 }
 
 int FlatMemoryAllocator::compexternalFrag()

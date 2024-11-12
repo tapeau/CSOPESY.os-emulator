@@ -116,7 +116,7 @@ class Scheduler
     int quantum_cycle; ///< Time slice for Round Robin scheduling in milliseconds.
     std::string scheduler_algorithm; ///< Name of the selected scheduling algorithm.
 
-    std::queue<std::shared_ptr<Process>> process_queue; ///< Queue holding the processes to be executed.
+    std::deque<std::shared_ptr<Process>> process_queue; ///< Queue holding the processes to be executed.
     std::vector<std::thread> worker_threads; ///< Collection of worker threads.
 
     std::mutex queue_mutex; ///< Mutex for synchronizing access to the process queue.

@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <iostream>
 #include <chrono>
 #include <iomanip>
@@ -14,7 +15,7 @@ Scheduler::Scheduler() : is_running(false), active_threads(0), debug_file("debug
 void Scheduler::addProcess(std::shared_ptr<Process> process)
 {
   std::unique_lock<std::mutex> lock(queue_mutex); // Lock the queue to ensure thread-safe access.
-  process_queue.push(process); // Add the process to the queue.
+  process_queue.push_back(process); // Add the process to the queue.
   queue_condition.notify_all(); // Notify a waiting thread that a new process is available.
 }
 
@@ -122,7 +123,7 @@ void Scheduler::scheduleFCFS()
       if (!is_running) break; // Exit if the scheduler is stopped.
 
       process = process_queue.front(); // Get the first process from the queue.
-      process_queue.pop(); // Remove it from the queue.
+      process_queue.pop_front(); // Remove it from the queue.
     }
 
     // Try to find an available core.
@@ -139,7 +140,7 @@ void Scheduler::scheduleFCFS()
     if (assigned_core == -1)
     {
       std::unique_lock<std::mutex> lock(queue_mutex);
-      process_queue.push(process);
+      process_queue.push_back(process);
       continue; // Skip to the next iteration.
     }
 
@@ -239,12 +240,12 @@ void Scheduler::scheduleRR(int core_id)
       void* memory = MemoryManager::getInstance().getAllocator()->allocate(process); // memory returns nullptr if it cannot allocate the process in memory
       if (memory != nullptr) { // if process is successfully allocated in memory 
                                // std::cout << "Allocated mem for process " << process->getName() << " (ID: " << process->getPID() << ")\n";
-        process_queue.pop();   // Remove it from the queue.
+        process_queue.pop_front();   // Remove it from the queue.
       } else {
         // std::cout <<" Insufficient memory for process " << process->getName() << "(ID: " << process->getPID() << ")\n";
-        // else statment is when memory is insufficient, therefore we cannot execute the process and just loop again.
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
-        continue;
+        // else statment is when memory is insufficient, therefore we cannot execute the process it is put back at the ready queue
+          process_queue.pop_front();
+          process_queue.push_back(process);
       }
     }
     // std::cout << "Current Process: " << process->getName() << " in_memory: " << process->isAllocated() << "\n";
@@ -278,7 +279,7 @@ void Scheduler::scheduleRR(int core_id)
       /*
        * Process Execution
        */
-      while (process->getCommandCounter() < process->getLinesOfCode() && quantum < quantum_cycle)
+      while (!process->hasFinished() && quantum < quantum_cycle)
       {
         // dumps memory info to file 
         MemoryManager::getInstance().writeMemInfoToFile(quantum);
@@ -308,7 +309,7 @@ void Scheduler::scheduleRR(int core_id)
           process->executeCurrentCommand();
           is_first_command_executed = true;
           cycle_counter = 0; // Reset cycle counter after each execution
-          quantum++;        // Increment quantum usage after each command execution
+          ++quantum;        // Increment quantum usage after each command execution
         }
         else
         {
@@ -319,26 +320,29 @@ void Scheduler::scheduleRR(int core_id)
           }
         }
       }
-      // std::cout << "quantum: " << quantum << "=? " << "quantum_cycle: " << quantum_cycle << "\n";
-
-      // if (quantum_cycle == quantum) {
-        // std::cout << MemoryManager::getInstance().getAllocator()->visualizeMemory();
-      // }
 
       // If the process is not finished, put it back in the queue.
-      if (process->getCommandCounter() < process->getLinesOfCode())
+      if (!process->hasFinished())
       {
         process->setState(Process::ProcessState::READY); // Set the process state to READY.
-        std::unique_lock<std::mutex> lock(queue_mutex);
-        process_queue.push(process); // Re-add the process to the queue.
+        std::lock_guard<std::mutex> lock(queue_mutex);
+        // std::cout << "Items in process_queue: ";
+        // for (auto& elem : process_queue) {
+        //   std::cout << elem->getName() << "\n";
+        // }
+        // std::cout << "Items in process_queue: ";
+        // push_back to queue if it is not in the queue to prevent duplicates in process_queue (ready queue)
+        if ( (std::find(process_queue.begin(), process_queue.end(), process) == process_queue.end()) ) {
+          process_queue.push_back(process);
+        }
       }
       else
       {
-        // MemoryManager::getInstance().getAllocator()->deallocate(process);
+        std::lock_guard<std::mutex> lock(queue_mutex);
         process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
+        MemoryManager::getInstance().getAllocator()->deallocate(process);
       }
 
-      MemoryManager::getInstance().getAllocator()->deallocate(process);
 
       std::lock_guard<std::mutex> lock(active_threads_mutex);
       active_threads--; // Decrement the active thread count.
@@ -346,8 +350,6 @@ void Scheduler::scheduleRR(int core_id)
       logActiveThreads(core_id, nullptr); // Log the thread state after completion.
       queue_condition.notify_all(); // Notify other threads of availability.
       CoreStateManager::getInstance().flipCoreState(core_id, ""); // Mark the core as idle.
-    } else {
-      continue;
     } 
   }
 }
@@ -378,13 +380,13 @@ void Scheduler::logActiveThreads(int core_id, std::shared_ptr<Process> current_p
   // Log the contents of the ready queue.
   debug_file << "Ready Queue: ";
   std::unique_lock<std::mutex> queue_lock(queue_mutex); // Lock the queue mutex.
-  std::queue<std::shared_ptr<Process>> temp_queue = process_queue; // Copy the queue.
+  std::deque<std::shared_ptr<Process>> temp_queue = process_queue; // Copy the queue.
   queue_lock.unlock(); // Unlock the queue mutex.
 
   while (!temp_queue.empty())
   {
-    debug_file << temp_queue.front()->getPID() << " "; // Log each process ID.
-    temp_queue.pop();
+    debug_file << temp_queue.front()->getName() << " "; // Log each process ID.
+    temp_queue.pop_front();
   }
   debug_file << std::endl;
 }

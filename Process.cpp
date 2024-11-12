@@ -1,3 +1,4 @@
+#include <mutex>
 #include <random>
 #include "Process.h"
 
@@ -22,7 +23,7 @@ void Process::executeCurrentCommand()
     command_list[command_counter]->execute();
 
     // Increment the command counter to move to the next command.
-    command_counter++;
+    ++command_counter;
   }
 }
 
@@ -41,6 +42,11 @@ int Process::getCommandCounter() const
 int Process::getLinesOfCode() const
 {
   return command_list.size();
+}
+
+bool Process::hasFinished() const
+{
+  return command_list.size() == command_counter;
 }
 
 // Returns the CPU core ID assigned to the process.
@@ -97,7 +103,7 @@ bool Process::isAllocated() const
 //   this->in_mem = in_mem;
 // }
 
-void Process::MemDealloc()
+void Process::memDealloc()
 {
   start_loc = end_loc = 0;
 }
@@ -112,7 +118,7 @@ size_t Process::getEndLoc() const
   return end_loc;
 }
 
-void Process::MemAlloc(size_t start_loc, size_t end_loc)
+void Process::memAlloc(size_t start_loc, size_t end_loc)
 {
   this->start_loc = start_loc;
   this->end_loc = end_loc;

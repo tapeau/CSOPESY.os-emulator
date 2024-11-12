@@ -154,7 +154,7 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
     }
 
     // Display CPU core utilization information.
-    out << "CPU utilization: " << (static_cast<double>(core_usage) / cpu_count) * 100 << "%\n";
+    out << "CPU utilization: " << core_usage * 100 / cpu_count << "%\n";
     out << "Cores used: " << core_usage << "\n";
     out << "Cores available: " << cpu_count - core_usage << "\n";
     out << "------------------------------------------------\n";
