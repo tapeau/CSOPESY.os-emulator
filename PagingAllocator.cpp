@@ -7,7 +7,7 @@
 
 PagingAllocator::PagingAllocator(size_t max_mem_size, size_t mem_per_frame)
   : max_mem_size(max_mem_size) {
-
+    // max_mem_size
     num_frame = max_mem_size / mem_per_frame;
     this->mem_per_frame = mem_per_frame;
 
@@ -43,14 +43,16 @@ void PagingAllocator::deallocFrames(size_t num_frame, size_t frame_index)
 void* PagingAllocator::allocate(std::shared_ptr<Process> process)
 {
   size_t process_id = process->getPID();
-  size_t num_frames_need; 
+  size_t num_frames_need = process->getMemReq() / mem_per_frame;
   // size_t frames_needed = process;
   if (num_frames_need > free_frames.size()) {
-    std::cerr << "Memory allocation failed. Not enough frames.\n";
-  return nullptr;
+    std::cerr << "Memory allocation failed. Not enough free frames.\n";
+    return nullptr;
   }
-  // size_t frame_index = allocate
-  return nullptr;
+
+  // Allocate frames for the process
+  size_t frame_index = allocFrames(num_frames_need, process_id);
+  return reinterpret_cast<void*>(frame_index);
 }
 
 void PagingAllocator::deallocate(std::shared_ptr<Process> process)
@@ -64,4 +66,19 @@ void PagingAllocator::deallocate(std::shared_ptr<Process> process)
     size_t frame_index = it->first;
     deallocFrames(1, frame_index);
   }
+}
+
+std::string PagingAllocator::visualizeMemory() 
+{
+  std::cout  << "Memory Visualization: \n";
+  for (size_t frame_index = 0; frame_index < num_frame; ++frame_index) {
+    auto it = frames.find(frame_index);
+    if (it != frames.end()) {
+      std::cout << "Frame " << frame_index << " -> Process " << it->second << "\n";
+    } else {
+      std::cout << "Frame " << frame_index << " -> Free\n";
+    }
+  }
+  std::cout << "------------------------------\n";
+    return " ";
 }

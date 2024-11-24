@@ -23,7 +23,7 @@ void MemoryManager::initAllocator(size_t max_overall_mem, size_t mem_per_frame)
     mem_allocator = std::make_shared<FlatMemoryAllocator>(max_overall_mem);
   } else {
     // PagingAllocator
-    mem_allocator = std::make_shared<PagingAllocator>(max_overall_mem);
+    mem_allocator = std::make_shared<PagingAllocator>(max_overall_mem, mem_per_frame);
   }
   deleteFileInfo();
 }
@@ -44,10 +44,10 @@ void MemoryManager::setqq(int qq)
   quantum_cycle = qq;
 }
 
-void MemoryManager::setVars()
-{
-
-}
+// void MemoryManager::setVars()
+// {
+//
+// }
 
 
 std::shared_ptr<IMemoryAllocator> MemoryManager::getAllocator()
