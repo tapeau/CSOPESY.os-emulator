@@ -128,7 +128,8 @@ void ConsoleManager::processCommand(const std::string &command)
       config_file >> temp >> delays_per_execution;
       config_file >> temp >> max_overall_mem;
       config_file >> temp >> mem_per_frame;
-      config_file >> temp >> mem_per_proc;
+      config_file >> temp >> min_mem_per_proc;
+      config_file >> temp >> max_mem_per_proc;
 
       config_file.close(); // Close the file
 
@@ -141,8 +142,10 @@ void ConsoleManager::processCommand(const std::string &command)
       std::cout << "max-ins: " << max_instructions << std::endl;
       std::cout << "delays-per-exec: " << delays_per_execution << std::endl;
       std::cout << "max-overall-mem: " << max_overall_mem << std::endl;
-      std::cout << "mem-per-frame: " << mem_per_frame << std::endl;
-      std::cout << "mem-per-proc: " << mem_per_proc << std::endl;
+      std::cout << "mem-per-frame: " << mem_per_frame << std::endl; // memory size per page
+      std::cout << "min-mem-per-proc: " << min_mem_per_proc << std::endl;
+      std::cout << "max-mem-per-proc: " << max_mem_per_proc << std::endl;
+
 
       // Initialize CPU clock
       cpu_clock = new Clock();
@@ -150,14 +153,14 @@ void ConsoleManager::processCommand(const std::string &command)
 
       // Initialize the process manager with configuration parameters
       process_manager = new ProcessManager(
-          min_instructions, max_instructions, cpu_count, scheduler_algorithm, delays_per_execution, quantum_cycles, cpu_clock,
-          max_overall_mem, mem_per_frame, mem_per_proc
+          min_instructions, max_instructions, cpu_count, scheduler_algorithm,
+          delays_per_execution, quantum_cycles, cpu_clock, max_overall_mem, 
+          mem_per_frame, min_mem_per_proc, max_mem_per_proc
           );
 
       // initializes FlatMemoryAllocator in MemoryManager
       MemoryManager::getInstance().setqq(quantum_cycles);
-      MemoryManager::getInstance().initAllocator(max_overall_mem);
-
+      MemoryManager::getInstance().initAllocator(max_overall_mem, mem_per_frame);
 
       is_initialized = true; // Set the initialized flag
 

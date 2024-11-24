@@ -57,7 +57,7 @@ public:
      * @param max_instructions Maximum number of instructions the process can execute.
      */
     Process(int process_id, const std::string &process_name, const std::string &creation_time, 
-            int core_id, int min_instructions, int max_instructions, size_t memory_required);
+            int core_id, int min_instructions, int max_instructions, size_t min_mem, size_t max_mem);
 
     /**
      * @brief Executes the next command in the process’s command list.
@@ -137,6 +137,7 @@ public:
     size_t getEndLoc() const;
     void memDealloc();
     void memAlloc(size_t start_loc, size_t end_loc);
+    void generateMem(size_t min_mem, size_t max_mem); // generate process memory based on config file
 
 private:
     int process_id;  // Unique identifier for the process.

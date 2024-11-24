@@ -5,7 +5,7 @@
 #include <string>
 #include "MemoryManager.h"
 #include "FlatMemoryAllocator.h"
-#include "IMemoryAllocator.h"
+#include "PagingAllocator.h"
 
 void MemoryManager::deleteFileInfo()
 {
@@ -16,9 +16,15 @@ void MemoryManager::deleteFileInfo()
   }
 }
 
-void MemoryManager::initAllocator(size_t size)
+void MemoryManager::initAllocator(size_t max_overall_mem, size_t mem_per_frame)
 {
-  mem_allocator = std::make_shared<FlatMemoryAllocator>(size);
+  // FlatMemoryAllocator if mem_per_frame and max_overall_mem is the same
+  if (max_overall_mem == mem_per_frame) {
+    mem_allocator = std::make_shared<FlatMemoryAllocator>(max_overall_mem);
+  } else {
+    // PagingAllocator
+    mem_allocator = std::make_shared<PagingAllocator>(max_overall_mem);
+  }
   deleteFileInfo();
 }
 
@@ -26,7 +32,6 @@ void MemoryManager::initAllocator(size_t size)
 void MemoryManager::writeMemInfoToFile(size_t qq) const
 {
   std::string filename = FILE_NAME_PREFIX + std::to_string(qq) + ".txt";
-  // std::filesystem::current_path(".");
   std::ofstream outfile;
 
   outfile.open(filename, std::ios_base::app);
@@ -37,6 +42,11 @@ void MemoryManager::writeMemInfoToFile(size_t qq) const
 void MemoryManager::setqq(int qq)
 {
   quantum_cycle = qq;
+}
+
+void MemoryManager::setVars()
+{
+
 }
 
 

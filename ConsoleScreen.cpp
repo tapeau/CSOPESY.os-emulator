@@ -9,7 +9,7 @@ const char GREEN[] = "\033[32m";   // Green-colored text.
 
 
 /*
- * Gonna use this for demo since in Linux cannot 
+ * Gonna use this for demo since in Linux cannot output colors using ANSI codes
  */
 void ConsoleScreen::printHeaderUsingHandle() const
 {
@@ -26,7 +26,7 @@ void ConsoleScreen::printHeaderUsingHandle() const
     << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" 
     << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
     << "\n"
-    << "Last updated: 11-04-2024\n";
+    << "Last updated: 11-22-2024\n";
     SetConsoleTextAttribute(console_handle, 7);
     std::cerr << "------------------------------------------\n";
     SetConsoleTextAttribute(console_handle, 14);
@@ -50,7 +50,7 @@ void ConsoleScreen::printHeader()
     << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" 
     << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
     << "\n"
-    << "Last updated: 11-04-2024\n"
+    << "Last updated: 11-22-2024\n"
     << DEFAULT << "------------------------------------------\n"
     << "Type 'exit' to quit, 'clear' to clear the screen" 
     << DEFAULT << std::endl;
@@ -123,13 +123,6 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
              << " (" << process->getTime() << ") ";
 
         // Check the process state and format accordingly.
-        // if (process->getState() == Process::READY)
-        // {
-        //     temp << "  READY   "
-        //          << process->getCommandCounter() << " / " 
-        //          << process->getLinesOfCode() << std::endl;
-        //     ready << temp.str() << std::endl;  // Store in ready processes.
-        // }
         if (process->getState() == Process::RUNNING)
         {
             temp << "  Core: " << process->getCPUCoreID() << "   "

@@ -23,7 +23,8 @@ class ConsoleManager
     Clock* cpu_clock; // CPU clock object
     int max_overall_mem; //Overall memory in bytes
     int mem_per_frame; //Size of memory in KB per frame. This is also the memory size per page
-    int mem_per_proc; //Fixed amount of memory per process
+    int min_mem_per_proc; // Minimum memory per process
+    int max_mem_per_proc; // Maximum memory per process
 
 private:
     // Structure to store screen information

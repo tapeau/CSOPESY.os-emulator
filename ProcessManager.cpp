@@ -1,15 +1,17 @@
 #include "ProcessManager.h"
 
 // Constructor for ProcessManager initializes the scheduler and starts its thread.
-ProcessManager::ProcessManager(int min_instructions, int max_instructions, int cpu_count, 
-                               std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle, Clock* cpu_clock, int max_overall_mem, int mem_per_frame, int mem_per_proc)
+ProcessManager::ProcessManager( int min_instructions, int max_instructions, int cpu_count, 
+    std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle, Clock* cpu_clock,
+    int max_overall_mem, int mem_per_frame, size_t min_mem_per_proc, size_t max_mem_per_proc )
 {
     // Store the min and max instructions for each process.
     this->min_instructions = min_instructions;
     this->max_instructions = max_instructions;
 
-    //sets the memory per process
-    this->mem_per_proc = mem_per_proc;
+    //sets the memory range
+    this->min_mem_per_proc = min_mem_per_proc;
+    this->max_mem_per_proc = max_mem_per_proc;
 
     // Set the CPU clock object
     this->cpu_clock = cpu_clock;
@@ -23,8 +25,6 @@ ProcessManager::ProcessManager(int min_instructions, int max_instructions, int c
 
     // Launch the scheduler in a separate thread to manage processes asynchronously.
     scheduler_thread = std::thread(&Scheduler::start, &scheduler);
-
-    //i think somewhere here we initialize the memory?
 }
 
 // Adds a new process to the manager and hands it off to the scheduler.
@@ -34,14 +34,16 @@ void ProcessManager::addProcess(string process_name, string creation_time)
     process_id_counter++;
 
     // Create a shared pointer to a new Process object with the given name and time.
-    shared_ptr<Process> process(new Process(process_id_counter, process_name, 
-                                            creation_time, -1, min_instructions, max_instructions, mem_per_proc));
+    shared_ptr<Process> process(new Process(process_id_counter, process_name, creation_time,
+          -1, min_instructions, max_instructions, min_mem_per_proc, max_mem_per_proc));
 
     // Store the process in the map using the process name as the key.
     process_list[process_name] = process;
 
     // Generate print commands (instructions) for the process.
-    process->generatePrintCommands(min_instructions, max_instructions);
+    // moved generatePrintCommands within process constructor
+    // process->generatePrintCommands(min_instructions, max_instructions);
+
 
     // Add the process to the scheduler for management.
     scheduler.addProcess(process);

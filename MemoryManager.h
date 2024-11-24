@@ -13,15 +13,15 @@ const std::string FILE_NAME_PREFIX = "memory_stamp_";
 class MemoryManager
 {
   public:
-    static MemoryManager& getInstance()
-    {
+    static MemoryManager& getInstance() {
       static MemoryManager instance;
 
       return instance;
     }
+
     static void destroy();
     std::shared_ptr<IMemoryAllocator> getAllocator();
-    void initAllocator(size_t size);
+    void initAllocator(size_t size, size_t min_mem);
     void writeMemInfoToFile(size_t qq) const;
     void setqq(int qq); 
 

@@ -3,11 +3,13 @@
 #include "Process.h"
 
 // Constructor implementation.
-Process::Process(int process_id, const std::string &process_name, const std::string &creation_time, 
-    int core_id, int min_instructions, int max_instructions, size_t memory_required)
+Process::Process( int process_id, const std::string &process_name, const std::string &creation_time, 
+    int core_id, int min_instructions, int max_instructions, size_t min_mem, size_t max_mem )
   : process_id(process_id), process_name(process_name), creation_time(creation_time), 
-  core_id(core_id), process_state(READY), requirement_flags{true, memory_required}
+  core_id(core_id), process_state(READY), requirement_flags{true}
 {
+  generatePrintCommands(min_instructions, max_instructions);
+  generateMem(min_mem, max_mem);
   std::string file_path = process_name + ".txt";
   std::remove(file_path.c_str());
 }
@@ -145,4 +147,19 @@ void Process::generatePrintCommands(int min_instructions, int max_instructions)
         process_id, core_id, "Hello World From " + process_name + " started.", process_name);
     command_list.push_back(cmd);
   }
+}
+
+// sets process memory
+void Process::generateMem(size_t min_mem, size_t max_mem)
+{
+  std::random_device rd;  // Obtain a random number from hardware
+  std::mt19937 gen(rd()); // Seed the generator
+
+  // Create a uniform distribution in the range [lower, upper]
+  std::uniform_int_distribution<> distrib(min_mem, max_mem);
+
+  // Generate a random number
+  size_t proc_mem = distrib(gen);
+
+  requirement_flags.memory_required = proc_mem;
 }
