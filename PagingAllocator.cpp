@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <iostream>
 #include <memory>
+#include <sstream>
 
 
 PagingAllocator::PagingAllocator(size_t max_mem_size, size_t mem_per_frame)
@@ -46,39 +47,47 @@ void* PagingAllocator::allocate(std::shared_ptr<Process> process)
   size_t num_frames_need = process->getMemReq() / mem_per_frame;
   // size_t frames_needed = process;
   if (num_frames_need > free_frames.size()) {
-    std::cerr << "Memory allocation failed. Not enough free frames.\n";
+    // std::cerr << "Memory allocation failed. Not enough free frames.\n";
     return nullptr;
   }
 
   // Allocate frames for the process
   size_t frame_index = allocFrames(num_frames_need, process_id);
+  process->memAlloc(0, 1);
   return reinterpret_cast<void*>(frame_index);
 }
 
 void PagingAllocator::deallocate(std::shared_ptr<Process> process)
 {
-  size_t pid = process->getPID();
+  size_t proc_id = process->getPID();
 
   auto it = std::find_if(frames.begin(), frames.end(),
-      [pid](const auto& entry) { return entry.second == pid; });
+      [proc_id](const auto& entry) { return entry.second == proc_id; });
 
+  // size_t frames_used = process->getMemReq() / mem_per_frame;
   while (it != frames.end()) {
     size_t frame_index = it->first;
+    // TODO: have to save number of pages needed somewhere in the process
     deallocFrames(1, frame_index);
+    it = std::find_if(frames.begin(), frames.end(), 
+        [proc_id](const auto& entry) { return entry.second == proc_id; });
   }
+  process->memAlloc(0, 0);
 }
 
 std::string PagingAllocator::visualizeMemory() 
 {
-  std::cout  << "Memory Visualization: \n";
+  std::stringstream str_stream;
+  str_stream << "------------------------------\n";
+  str_stream  << "Memory Visualization: \n";
   for (size_t frame_index = 0; frame_index < num_frame; ++frame_index) {
     auto it = frames.find(frame_index);
     if (it != frames.end()) {
-      std::cout << "Frame " << frame_index << " -> Process " << it->second << "\n";
+      str_stream << "Frame " << frame_index << " -> Process " << it->second << "\n";
     } else {
-      std::cout << "Frame " << frame_index << " -> Free\n";
+      str_stream << "Frame " << frame_index << " -> Free\n";
     }
   }
-  std::cout << "------------------------------\n";
-    return " ";
+  str_stream << "------------------------------\n";
+  return str_stream.str();
 }

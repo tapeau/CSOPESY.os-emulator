@@ -139,7 +139,7 @@ void Process::generatePrintCommands(int min_instructions, int max_instructions)
   int num_commands = distrib(gen);
 
   // Create the print commands and add them to the command list.
-  for (int i = 1; i <= num_commands; ++i)
+  for (int i = 0; i < num_commands; ++i)
   {
     // Create a new PrintCommand and add it to the command list.
     std::shared_ptr<ICommand> cmd = std::make_shared<PrintCommand>(
@@ -158,7 +158,9 @@ void Process::generateMem(size_t min_mem, size_t max_mem)
   std::uniform_int_distribution<> distrib(min_mem, max_mem);
 
   // Generate a random number
-  size_t proc_mem = distrib(gen);
+  size_t exponent = distrib(gen);
+  
+  size_t proc_mem = pow(2, exponent);
 
   requirement_flags.memory_required = proc_mem;
 }

@@ -1,5 +1,4 @@
 #include <ctime>
-#include <filesystem>
 #include <fstream>
 #include <memory>
 #include <string>
@@ -14,6 +13,8 @@ void MemoryManager::deleteFileInfo()
     std::string filePath = FILE_NAME_PREFIX + std::to_string(i) + ".txt";
     std::remove(filePath.c_str());
   }
+  std::string filePath = FILE_NAME_PREFIX + std::to_string(100) + ".txt";
+  std::remove(filePath.c_str());
 }
 
 void MemoryManager::initAllocator(size_t max_overall_mem, size_t mem_per_frame)
@@ -43,12 +44,6 @@ void MemoryManager::setqq(int qq)
 {
   quantum_cycle = qq;
 }
-
-// void MemoryManager::setVars()
-// {
-//
-// }
-
 
 std::shared_ptr<IMemoryAllocator> MemoryManager::getAllocator()
 {

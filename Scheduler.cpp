@@ -2,6 +2,7 @@
 #include <iostream>
 #include <chrono>
 #include <iomanip>
+#include <mutex>
 #include "Scheduler.h"
 #include "Process.h" 
 #include "CoreStateManager.h"
@@ -134,8 +135,9 @@ void Scheduler::scheduleFCFS()
       }
       // process_queue.pop_front(); // Remove it from the queue.
     }
-
     if (process->isAllocated()) {
+
+
       // Try to find an available core.
       for (int i = 1; i <= cpu_count; ++i)
       {
@@ -181,6 +183,7 @@ void Scheduler::scheduleFCFS()
         // Execute the process until it completes all commands.
         while (process->getCommandCounter() < process->getLinesOfCode())
         {
+          // testing purposes
           MemoryManager::getInstance().writeMemInfoToFile(100);
           if (delay_per_execution != 0)
           {
@@ -281,7 +284,11 @@ void Scheduler::scheduleRR(int core_id)
       logActiveThreads(core_id, process); // Log the active threads.
       process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
       process->setCPUCoreID(core_id); // Assign the current core to the process.
-      CoreStateManager::getInstance().flipCoreState(core_id, process->getName()); // Mark the core as in use.
+
+      // TODO: add some checks in here since cpu is always at maximum
+      if (process->getCPUCoreID() == core_id) {
+        CoreStateManager::getInstance().flipCoreState(core_id, process->getName()); // Mark the core as in use.
+      }
 
       int last_clock_value = cpu_clock->getClock();
       bool is_first_command_executed = false;
@@ -292,12 +299,10 @@ void Scheduler::scheduleRR(int core_id)
       /*
        * Process Execution
        */
-      while (!process->hasFinished() && quantum < quantum_cycle)
-      {
+      while (!process->hasFinished() && quantum < quantum_cycle) {
         // dumps memory info to file 
         MemoryManager::getInstance().writeMemInfoToFile(quantum);
-        if (delay_per_execution != 0)
-        {
+        if (delay_per_execution != 0) {
           // Wait for the next CPU cycle
           std::unique_lock<std::mutex> lock(cpu_clock->getMutex());
           cpu_clock->getCondition().wait(lock, [&]
@@ -306,14 +311,15 @@ void Scheduler::scheduleRR(int core_id)
               });
           last_clock_value = cpu_clock->getClock();
         }
-        else
-        {
+        else {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
 
         // Execute the first command immediately, then apply delay for subsequent commands
-        if (!is_first_command_executed || (++cycle_counter >= delay_per_execution))
-        {
+        if (!is_first_command_executed || (++cycle_counter >= delay_per_execution)) {
+          // added mutex lock since issue arises when multiple cpus are trying to execute
+          // a single process
+          std::lock_guard<std::mutex> lock(queue_mutex);
           process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
           if (!CoreStateManager::getInstance().getCoreState(core_id)) // If the core is not in use.
           {
@@ -323,9 +329,7 @@ void Scheduler::scheduleRR(int core_id)
           is_first_command_executed = true;
           cycle_counter = 0; // Reset cycle counter after each execution
           ++quantum;        // Increment quantum usage after each command execution
-        }
-        else
-        {
+        } else {
           process->setState(Process::ProcessState::WAITING); // Set the process state to WAITING.
           if (CoreStateManager::getInstance().getCoreState(core_id)) // If the core is in use.
           {
@@ -348,14 +352,12 @@ void Scheduler::scheduleRR(int core_id)
         if ( (std::find(process_queue.begin(), process_queue.end(), process) == process_queue.end()) ) {
           process_queue.push_back(process);
         }
-      }
-      else
-      {
+
+      } else {
         std::lock_guard<std::mutex> lock(queue_mutex);
         process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
         MemoryManager::getInstance().getAllocator()->deallocate(process);
       }
-
 
       std::lock_guard<std::mutex> lock(active_threads_mutex);
       active_threads--; // Decrement the active thread count.
