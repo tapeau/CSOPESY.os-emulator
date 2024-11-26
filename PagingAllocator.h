@@ -17,6 +17,7 @@ class PagingAllocator : public IMemoryAllocator
     std::unordered_map<size_t, size_t> frames;
     std::vector<size_t> free_frames;
     size_t mem_per_frame; // since memory per process is pre-determined
+    std::mutex mem_mtx;
 
     size_t allocFrames(size_t num_frame, size_t pid);
     void deallocFrames(size_t num_frame, size_t frame_index);

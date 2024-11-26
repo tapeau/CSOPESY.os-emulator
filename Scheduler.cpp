@@ -136,8 +136,6 @@ void Scheduler::scheduleFCFS()
       // process_queue.pop_front(); // Remove it from the queue.
     }
     if (process->isAllocated()) {
-
-
       // Try to find an available core.
       for (int i = 1; i <= cpu_count; ++i)
       {
@@ -156,8 +154,7 @@ void Scheduler::scheduleFCFS()
         continue; // Skip to the next iteration.
       }
 
-      if (process)
-      {
+      if (process) {
         {
           std::lock_guard<std::mutex> lock(active_threads_mutex);
           active_threads++; // Increment the active thread count.
@@ -174,6 +171,8 @@ void Scheduler::scheduleFCFS()
         logActiveThreads(assigned_core, process); // Log the active threads.
         process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
         process->setCPUCoreID(assigned_core); // Assign the core to the process.
+
+        // TODO: add some checks in here since cpu is always at maximum
         CoreStateManager::getInstance().flipCoreState(assigned_core, process->getName()); // Mark the core as in use.
 
         int last_clock_value = cpu_clock->getClock();
@@ -181,12 +180,10 @@ void Scheduler::scheduleFCFS()
         int cycle_counter = 0;
 
         // Execute the process until it completes all commands.
-        while (process->getCommandCounter() < process->getLinesOfCode())
-        {
+        while (process->getCommandCounter() < process->getLinesOfCode()) {
           // testing purposes
           MemoryManager::getInstance().writeMemInfoToFile(100);
-          if (delay_per_execution != 0)
-          {
+          if (delay_per_execution != 0) {
             // Wait for the next CPU cycle
             std::unique_lock<std::mutex> lock(cpu_clock->getMutex());
             cpu_clock->getCondition().wait(lock, [&]
@@ -195,14 +192,15 @@ void Scheduler::scheduleFCFS()
                 });
             last_clock_value = cpu_clock->getClock();
           }
-          else
-          {
+          else {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
 
           // Execute the first command immediately, then apply delay for subsequent commands
-          if (!is_first_command_executed || (++cycle_counter >= delay_per_execution))
-          {
+          if (!is_first_command_executed || (++cycle_counter >= delay_per_execution)) {
+            // have to add lock here bug occurs, execution > maximum instruction if not
+            // since CPU implementation does not necessarily hold a certain process as its own
+            std::scoped_lock lock{queue_mutex};
             process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
             if (!CoreStateManager::getInstance().getCoreState(assigned_core)) // If the core is not in use.
             {
@@ -211,9 +209,7 @@ void Scheduler::scheduleFCFS()
             process->executeCurrentCommand();
             is_first_command_executed = true;
             cycle_counter = 0; // Reset cycle counter after each execution
-          }
-          else
-          {
+          } else {
             process->setState(Process::ProcessState::WAITING); // Set the process state to WAITING.
             if (CoreStateManager::getInstance().getCoreState(assigned_core)) // If the core is in use.
             {
@@ -342,7 +338,7 @@ void Scheduler::scheduleRR(int core_id)
       if (!process->hasFinished())
       {
         process->setState(Process::ProcessState::READY); // Set the process state to READY.
-        std::lock_guard<std::mutex> lock(queue_mutex);
+        std::scoped_lock lock{queue_mutex};
         // std::cout << "Items in process_queue: ";
         // for (auto& elem : process_queue) {
         //   std::cout << elem->getName() << "\n";
@@ -352,9 +348,8 @@ void Scheduler::scheduleRR(int core_id)
         if ( (std::find(process_queue.begin(), process_queue.end(), process) == process_queue.end()) ) {
           process_queue.push_back(process);
         }
-
       } else {
-        std::lock_guard<std::mutex> lock(queue_mutex);
+        std::scoped_lock lock{queue_mutex};
         process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
         MemoryManager::getInstance().getAllocator()->deallocate(process);
       }

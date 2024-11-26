@@ -1,5 +1,6 @@
 #include "ConsoleScreen.h"
 #include "CoreStateManager.h"
+#include "MemoryManager.h"
 #include <windows.h>
 
 // ANSI escape sequences for terminal text coloring.
@@ -170,15 +171,27 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
  */
 void ConsoleScreen::showProcessUpdated(std::shared_ptr<Process> process)
 {
-    if (process->getState() == Process::RUNNING || process->getState() == Process::READY)
-    {
+  // TODO: Implement process-smi 
+  // ---------------------------------------------- 
+  // | PROCESS-SMI v01.00 Driver Version: 01.00 |
+  // ---------------------------------------------- 
+  // CPU-Util: <usage>%
+  // Memory Usage: 1245KiB / 4799 KiB
+  // Memory Util: <usage>%
+  //
+  // ==============================================
+  // Running processes and memory usage:
+  // ---------------------------------------------- 
+  // processes05 134KiB
+  // processes06 134KiB
+  // processes07 977KiB
+
+    if (process->getState() == Process::RUNNING || process->getState() == Process::READY) {
         std::cout << BLUE << "Process: " << process->getName() << DEFAULT << std::endl;
         std::cout << BLUE << "ID: " << process->getName() << DEFAULT << std::endl;
         std::cout << "Current instruction line: " << process->getCommandCounter() << std::endl;
         std::cout << "Lines of code: " << process->getLinesOfCode() << std::endl;
-    }
-    else
-    {
+    } else {
         std::cout << "Finished!" << std::endl;
     }
     std::cout << std::endl;
@@ -207,18 +220,13 @@ void ConsoleScreen::showScreen(std::shared_ptr<Process> process)
         std::cout << "Enter a command: ";
         std::getline(std::cin, command);
 
-        if (command == "process-smi")
-        {
+        if (command == "process-smi") {
             showProcessUpdated(process);  // Show updated process info.
-        }
-        else if (command == "exit")
-        {
+        } else if (command == "exit") {
             system("cls");  // Clear the console.
             printHeaderUsingHandle();  // Reprint the header.
             break;
-        }
-        else
-        {
+        } else {
             std::cout << "Unknown command. Please try again." << std::endl;
         }
     }

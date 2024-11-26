@@ -50,3 +50,6 @@ std::shared_ptr<IMemoryAllocator> MemoryManager::getAllocator()
   // std::scoped_lock<std::mutex> lock(mem_mutex);
   return mem_allocator;
 }
+
+// TODO: Probalby this is where process-smi prompt will get the string from
+// TODO: also for vmstat I guess?
