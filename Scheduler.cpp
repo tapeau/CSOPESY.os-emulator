@@ -172,7 +172,7 @@ void Scheduler::scheduleFCFS()
         process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
         process->setCPUCoreID(assigned_core); // Assign the core to the process.
 
-        // TODO: add some checks in here since cpu is always at maximum
+        // TODO: bug, cpu utilization is not accurate when using PagingAllocator
         CoreStateManager::getInstance().flipCoreState(assigned_core, process->getName()); // Mark the core as in use.
 
         int last_clock_value = cpu_clock->getClock();
@@ -281,7 +281,8 @@ void Scheduler::scheduleRR(int core_id)
       process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
       process->setCPUCoreID(core_id); // Assign the current core to the process.
 
-      // TODO: add some checks in here since cpu is always at maximum
+      // TODO: add some checks in here since cpu is always at maximum for both PagingAllocator
+      // and FlatMemoryAllocator
       if (process->getCPUCoreID() == core_id) {
         CoreStateManager::getInstance().flipCoreState(core_id, process->getName()); // Mark the core as in use.
       }

@@ -7,12 +7,13 @@
 #include <sstream>
 
 
+// TODO: Fix bug with FCFS, when allocating memory for a process it allocates 
+// two processes with same CPU
+
 PagingAllocator::PagingAllocator(size_t max_mem_size, size_t mem_per_frame)
-  : max_mem_size(max_mem_size) 
+  : max_mem_size(max_mem_size), mem_per_frame(mem_per_frame)
 {
-  // max_mem_size
   num_frame = max_mem_size / mem_per_frame;
-  this->mem_per_frame = mem_per_frame;
 
   // Init free frame list
   for (size_t i = 0; i < num_frame; ++i) {
@@ -65,6 +66,7 @@ void* PagingAllocator::allocate(std::shared_ptr<Process> process)
 
 void PagingAllocator::deallocate(std::shared_ptr<Process> process)
 {
+  std::scoped_lock lock{mem_mtx};
   size_t proc_id = process->getPID();
 
   auto it = std::find_if(frames.begin(), frames.end(),
