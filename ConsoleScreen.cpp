@@ -163,29 +163,115 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
 
 void ConsoleScreen::process_smi(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem)
 {
+    static std::mutex process_list_mutex;  // Mutex for thread safety
+
+    // Lock the mutex for the scope of this function
+    std::lock_guard<std::mutex> lock(process_list_mutex);
+     // Buffers to store formatted output for different process states.
+    std::stringstream ready, running, finished;
+    int core_usage = 0;  // Tracks the number of CPU cores currently used.
+    int mem_usage = 0; //tracks the number of memory used
+
+    // Retrieve the state of each core from CoreStateManager (singleton).
+    const std::vector<bool>& core_states = CoreStateManager::getInstance().getCoreStates();
+
+    std::map<int, std::vector<std::shared_ptr<Process>>> processes;
+
+    for (const auto &pair : process_list){
+        
+        const std::shared_ptr<Process> process = pair.second;
+        int id = process->getCPUCoreID();
+        processes[id].push_back(process);
+    }
+
+    // Count the number of active cores (core_usage).
+    for (bool core_state : core_states)
+    {
+        if (core_state)
+        {
+            core_usage++;
+        }
+    }
+
+    for(int i = 0; i < core_states.size(); i++){
+        if(core_states[i]){
+            for (const auto& proc:processes[i]){
+                mem_usage += proc->getMemReq();
+            }
+        }
+    }
+
     std::cout << "------------------------------------------\n" << std::endl;
     std::cout << "|  PROCESS-SMI V01.00         Driver Version: 01.00  |\n" << std::endl;
     std::cout << "------------------------------------------\n" << std::endl;
     std::cout << "CPU-Util: " << core_usage * 100 / cpu_count << "%\n" << std::endl;
-    std::cout << "Memory Usage: " << x << "MiB / "  << max_mem << "MiB" << std::endl;
-    std::cout << "Memory Util: " << x * 100 / max_mem << "%\n\n" << std::endl;
+    std::cout << "Memory Usage: " << mem_usage << "MiB / "  << max_mem << "MiB" << std::endl;
+    std::cout << "Memory Util: " << mem_usage * 100 / max_mem << "%\n\n" << std::endl;
     std::cout << "==========================================\n" << std::endl;
     std::cout << "Running processes and memory usage: \n" << std::endl;
     std::cout << "------------------------------------------\n" << std::endl;
-    std::cout << //loop here processes and memory
+    for (const auto &pair : process_list){
+        
+        const std::shared_ptr<Process> process = pair.second;
+
+        if (process->getState() == Process::RUNNING){
+            std::cout << process->getName() << " " << process->getMemReq() << "MiB\n" << std::endl;
+        }
+        else{
+            std::cout << "There are no active processes." << std::endl;
+        }
+    }
     std::cout << "------------------------------------------\n" << std::endl;
 }
 
-void ConsoleScreen::vmstat(int max_mem)
+void ConsoleScreen::vmstat(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem)
 {
-  std::cout << max_mem << " K total memory\n" << std::endl; //format this and change vars
-  std::cout << max_mem << " K used memory \n" << std::endl;
-  std::cout << max_mem << " K free memory\n" << std::endl;
-  std::cout << max_mem << " idle CPU ticks\n" << std::endl;
-  std::cout << max_mem << " active CPU ticks\n" << std::endl;
-  std::cout << max_mem << " total CPU ticks\n" << std::endl;
-  std::cout << max_mem << " pages paged in\n" << std::endl;
-  std::cout << max_mem << " pages paged out\n" << std::endl;
+    static std::mutex process_list_mutex;  // Mutex for thread safety
+
+    // Lock the mutex for the scope of this function
+    std::lock_guard<std::mutex> lock(process_list_mutex);
+     // Buffers to store formatted output for different process states.
+    std::stringstream ready, running, finished;
+    int core_usage = 0;  // Tracks the number of CPU cores currently used.
+    int mem_usage = 0; //tracks the number of memory used
+
+    // Retrieve the state of each core from CoreStateManager (singleton).
+    const std::vector<bool>& core_states = CoreStateManager::getInstance().getCoreStates();
+
+    std::map<int, std::vector<std::shared_ptr<Process>>> processes;
+
+    for (const auto &pair : process_list){
+        
+        const std::shared_ptr<Process> process = pair.second;
+        int id = process->getCPUCoreID();
+        processes[id].push_back(process);
+    }
+
+    // Count the number of active cores (core_usage).
+    for (bool core_state : core_states)
+    {
+        if (core_state)
+        {
+            core_usage++;
+        }
+    }
+
+    for(int i = 0; i < core_states.size(); i++){
+        if(core_states[i]){
+            for (const auto& proc:processes[i]){
+                mem_usage += proc->getMemReq();
+            }
+        }
+    }
+
+    std::cout << max_mem << " K total memory\n" << std::endl; //format this and change vars
+    std::cout << mem_usage << " K used memory \n" << std::endl;
+    std::cout << max_mem - mem_usage << " K free memory\n" << std::endl;
+    std::cout << max_mem << " idle CPU ticks\n" << std::endl;
+    std::cout << max_mem << " active CPU ticks\n" << std::endl;
+    std::cout << max_mem << " total CPU ticks\n" << std::endl;
+    std::cout << max_mem << " pages paged in\n" << std::endl;
+    std::cout << max_mem << " pages paged out\n" << std::endl;
 }
 
 /**
