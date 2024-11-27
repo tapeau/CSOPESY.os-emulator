@@ -37,6 +37,10 @@ public:
     // Streams all processes to a given output stream.
     void streamAllProcesses(std::map<std::string, std::shared_ptr<Process>> process_list, int num_core, std::ostream& out);
 
+    void process_smi(std::map<std::string, std::shared_ptr<Process>> process_list, int num_core, std::ostream& out);
+
+    void vmstat(int max_mem);
+
     // Retrieves the current timestamp.
     std::string getCurrentTimestamp();
 };

@@ -94,6 +94,16 @@ void ConsoleManager::reportUtilization()
   }
 }
 
+void ConsoleManager::processsmi()
+{
+  
+}
+
+void ConsoleManager::vmstat(int max_mem)
+{
+  
+}
+
 // Handle user input commands and delegate to appropriate methods
 void ConsoleManager::processCommand(const std::string &command)
 {
@@ -210,6 +220,14 @@ void ConsoleManager::processCommand(const std::string &command)
   else if (command == "report-util")
   {
     reportUtilization();
+  }
+
+  else if (command == "process-smi"){
+    processsmi();
+  }
+
+  else if (command == "vmstat"){
+    vmstat(max_overall_mem);
   }
   // Start a scheduler test in a separate thread
   else if (command == "scheduler-test")

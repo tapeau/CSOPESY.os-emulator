@@ -161,6 +161,33 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
     out << "------------------------------------------------\n";
 }
 
+void ConsoleScreen::process_smi(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem)
+{
+    std::cout << "------------------------------------------\n" << std::endl;
+    std::cout << "|  PROCESS-SMI V01.00         Driver Version: 01.00  |\n" << std::endl;
+    std::cout << "------------------------------------------\n" << std::endl;
+    std::cout << "CPU-Util: " << core_usage * 100 / cpu_count << "%\n" << std::endl;
+    std::cout << "Memory Usage: " << x << "MiB / "  << max_mem << "MiB" << std::endl;
+    std::cout << "Memory Util: " << x * 100 / max_mem << "%\n\n" << std::endl;
+    std::cout << "==========================================\n" << std::endl;
+    std::cout << "Running processes and memory usage: \n" << std::endl;
+    std::cout << "------------------------------------------\n" << std::endl;
+    std::cout << //loop here processes and memory
+    std::cout << "------------------------------------------\n" << std::endl;
+}
+
+void ConsoleScreen::vmstat(int max_mem)
+{
+  std::cout << max_mem << " K total memory\n" << std::endl; //format this and change vars
+  std::cout << max_mem << " K used memory \n" << std::endl;
+  std::cout << max_mem << " K free memory\n" << std::endl;
+  std::cout << max_mem << " idle CPU ticks\n" << std::endl;
+  std::cout << max_mem << " active CPU ticks\n" << std::endl;
+  std::cout << max_mem << " total CPU ticks\n" << std::endl;
+  std::cout << max_mem << " pages paged in\n" << std::endl;
+  std::cout << max_mem << " pages paged out\n" << std::endl;
+}
+
 /**
  * Shows the updated state of a specific process on the console.
  * If the process is running, it prints the current progress. 
