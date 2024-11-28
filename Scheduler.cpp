@@ -125,7 +125,6 @@ void Scheduler::scheduleFCFS()
       process = process_queue.front(); // Get the first process from the queue.
       void* memory = MemoryManager::getInstance().getAllocator()->allocate(process); // memory returns nullptr if it cannot allocate the process in memory
       if (memory != nullptr) { // if process is successfully allocated in memory 
-                               // std::cout << "Allocated mem for process " << process->getName() << " (ID: " << process->getPID() << ")\n";
         process_queue.pop_front();   // Remove it from the queue.
       } else {
         // std::cout <<" Insufficient memory for process " << process->getName() << "(ID: " << process->getPID() << ")\n";
@@ -135,22 +134,33 @@ void Scheduler::scheduleFCFS()
       }
       // process_queue.pop_front(); // Remove it from the queue.
     }
+
     if (process->isAllocated()) {
       // Try to find an available core.
       for (int i = 1; i <= cpu_count; ++i)
       {
+        // have to add a lock here since implementation of cores in this program 
+        // is not entirely contained it its ownself but multiple threads that sort of 
+        // have the same resources with multiple instance of execution
+        std::scoped_lock lock{fcfs_mutex};
         if (!CoreStateManager::getInstance().getCoreState(i)) // If the core is not in use.
         {
           assigned_core = i; // Assign this core to the process.
+          process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
+          process->setCPUCoreID(assigned_core); // Assign the core to the process.
+
+          // TODO: bug, cpu utilization is not accurate when using PagingAllocator
+          CoreStateManager::getInstance().flipCoreState(assigned_core, process->getName()); // Mark the core as in use.
           break;
         }
       }
-
+      // issue seems to be multiple cores are selecting the same process
+      // std::cout << process->getName() << " is assigned to   Core: " << assigned_core << "\n";
       // If no core is available, put the process back into the queue.
       if (assigned_core == -1)
       {
-        std::unique_lock<std::mutex> lock(queue_mutex);
-        process_queue.push_back(process);
+        std::scoped_lock lock{fcfs_mutex};
+        // process_queue.push_back(process);
         continue; // Skip to the next iteration.
       }
 
@@ -169,11 +179,6 @@ void Scheduler::scheduleFCFS()
         }
 
         logActiveThreads(assigned_core, process); // Log the active threads.
-        process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
-        process->setCPUCoreID(assigned_core); // Assign the core to the process.
-
-        // TODO: bug, cpu utilization is not accurate when using PagingAllocator
-        CoreStateManager::getInstance().flipCoreState(assigned_core, process->getName()); // Mark the core as in use.
 
         int last_clock_value = cpu_clock->getClock();
         bool is_first_command_executed = false;

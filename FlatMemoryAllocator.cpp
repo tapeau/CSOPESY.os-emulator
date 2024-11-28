@@ -46,7 +46,7 @@ void* FlatMemoryAllocator::allocate(std::shared_ptr<Process> process)
   size_t size = process->getMemReq();
   for (size_t i = 0; i < max_size - size + 1; ++i) {
     if (!alloc_map[i] && canAllocAt(i, size) && !process->isAllocated()) {
-      std::scoped_lock<std::mutex> lock(mem_mtx);
+      std::scoped_lock<std::mutex> lock{mem_mtx};
       allocAt(i, size);
       // DEBUGGING PURPOSES:
       // std::cout << process->getName() << ", successfully allocated at " << std::to_string(i) << "~" + std::to_string(i+size) << "\n"; 
