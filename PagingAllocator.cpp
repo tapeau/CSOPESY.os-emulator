@@ -16,6 +16,20 @@ PagingAllocator::PagingAllocator(size_t max_mem_size, size_t mem_per_frame)
       free_frames.push_back(i);
     }
   }
+  
+PagingAllocator& PagingAllocator::getInstance()
+{
+    static PagingAllocator instance;  // Thread-safe static initialization in C++11 and later.
+    return instance;
+}
+
+int PagingAllocator::getPageIn() {
+  return pageIn;
+}
+
+int PagingAllocator::getPageOut(){
+  return pageOut;
+}
 
 size_t PagingAllocator::allocFrames(size_t num_frame, size_t pid)
 {
@@ -52,6 +66,7 @@ void* PagingAllocator::allocate(std::shared_ptr<Process> process)
 
   // Allocate frames for the process
   size_t frame_index = allocFrames(num_frames_need, process_id);
+  pageIn++;
   return reinterpret_cast<void*>(frame_index);
 }
 
@@ -65,6 +80,7 @@ void PagingAllocator::deallocate(std::shared_ptr<Process> process)
   while (it != frames.end()) {
     size_t frame_index = it->first;
     deallocFrames(1, frame_index);
+    pageOut++;
   }
 }
 

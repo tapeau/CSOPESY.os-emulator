@@ -14,8 +14,7 @@ public:
     int getClock();                 // Retrieves the current clock value
     void startClock();              // Starts the clock's counting thread
     void stopClock();               // Stops the clock's counting thread
-    int getActive();
-    void setActive(int num);
+
 
     // Provides access to the clock's condition variable for synchronization
     std::condition_variable& getCondition() 
@@ -35,5 +34,4 @@ private:
     std::thread clock_thread;       // Thread to run the clock incrementing process
     std::condition_variable cycle_condition; // Condition variable to notify cycle updates
     std::mutex clock_mutex;         // Mutex to protect clock updates
-    int cpu_active;
 };

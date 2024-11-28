@@ -11,6 +11,16 @@
 // Constructor initializes the scheduler's state and member variables.
 Scheduler::Scheduler() : is_running(false), active_threads(0), debug_file("debug.txt"), ready_threads(0), cpu_clock(nullptr) {}
 
+Scheduler& Scheduler::getInstance()
+{
+    static Scheduler instance;  // Thread-safe static initialization in C++11 and later.
+    return instance;
+}
+
+int Scheduler::getActive(){
+  return active_ticks;
+}
+
 // Add a new process to the scheduling queue.
 void Scheduler::addProcess(std::shared_ptr<Process> process)
 {
@@ -179,6 +189,7 @@ void Scheduler::scheduleFCFS()
         int last_clock_value = cpu_clock->getClock();
         bool is_first_command_executed = false;
         int cycle_counter = 0;
+        active_ticks++;
 
         // Execute the process until it completes all commands.
         while (process->getCommandCounter() < process->getLinesOfCode())
@@ -237,9 +248,7 @@ void Scheduler::scheduleFCFS()
       std::scoped_lock lock{fcfs_mutex};
       MemoryManager::getInstance().getAllocator()->deallocate(process);
     }
-
   }
-  cpu_clock->setActive(cpu_active);
 }
 
 // Round Robin (RR) scheduling algorithm.
@@ -296,6 +305,7 @@ void Scheduler::scheduleRR(int core_id)
       int last_clock_value = cpu_clock->getClock();
       bool is_first_command_executed = false;
       int cycle_counter = 0;
+      active_ticks++;
 
       // Execute the process for a time slice (quantum).
       int quantum = 0;
@@ -315,6 +325,7 @@ void Scheduler::scheduleRR(int core_id)
               return cpu_clock->getClock() > last_clock_value;
               });
           last_clock_value = cpu_clock->getClock();
+          cpu_active++;
         }
         else
         {
@@ -374,9 +385,7 @@ void Scheduler::scheduleRR(int core_id)
       queue_condition.notify_all(); // Notify other threads of availability.
       CoreStateManager::getInstance().flipCoreState(core_id, ""); // Mark the core as idle.
     } 
-    cpu_active++;
   }
-  cpu_clock->setActive(cpu_active);
 }
 
 // Log the current state of active threads and processes to the debug file.

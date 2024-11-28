@@ -1,6 +1,9 @@
 #include "ConsoleScreen.h"
 #include "CoreStateManager.h"
 #include <windows.h>
+#include <iomanip>
+#include "PagingAllocator.h"
+#include "Scheduler.h"
 
 // ANSI escape sequences for terminal text coloring.
 const char DEFAULT[] = "\033[0m";  // Resets the color back to default.
@@ -264,14 +267,15 @@ void ConsoleScreen::vmstat(std::map<std::string, std::shared_ptr<Process>> proce
         }
     }
 
-    std::cout << max_mem << " K total memory\n" << std::endl; //format this and change vars
-    std::cout << mem_usage << " K used memory \n" << std::endl;
-    std::cout << max_mem - mem_usage << " K free memory\n" << std::endl;
-    std::cout << clock->getClock() - clock->getActive() << " idle CPU ticks\n" << std::endl;
-    std::cout << clock->getActive() << " active CPU ticks\n" << std::endl;
-    std::cout << clock->getClock() << " total CPU ticks\n" << std::endl;
-    std::cout << max_mem << " pages paged in\n" << std::endl; //
-    std::cout << max_mem << " pages paged out\n" << std::endl; //
+    std::cout << std::setw(10) << max_mem << " K total memory\n" << std::endl;
+    std::cout << std::setw(10) << mem_usage << " K used memory \n" << std::endl;
+    std::cout << std::setw(10) << (max_mem - mem_usage) << " K free memory\n" << std::endl;
+    std::cout << std::setw(10) << (clock->getClock() - Scheduler::getInstance().getActive()) << " idle CPU ticks\n" << std::endl;
+    std::cout << std::setw(10) << Scheduler::getInstance().getActive() << " active CPU ticks\n" << std::endl;
+    std::cout << std::setw(10) << clock->getClock() << " total CPU ticks\n" << std::endl;
+    std::cout << std::setw(10) << PagingAllocator::getInstance().getPageIn() << " pages paged in\n" << std::endl;
+    std::cout << std::setw(10) << PagingAllocator::getInstance().getPageOut() << " pages paged out\n" << std::endl;
+
 }
 
 /**

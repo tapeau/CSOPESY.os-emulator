@@ -94,14 +94,14 @@ void ConsoleManager::reportUtilization()
   }
 }
 
-void ConsoleManager::processsmi()
-{
-  
+void ConsoleManager::processsmi(int max_mem)
+{ 
+  screen_manager.process_smi(process_manager->getAllProcesses(), cpu_count, max_mem);
 }
 
-void ConsoleManager::vmstat(int max_mem)
+void ConsoleManager::vmstat(int max_mem, Clock* cpu_clock)
 {
-  
+  screen_manager.vmstat(process_manager->getAllProcesses(), cpu_count, max_mem, cpu_clock); //clock?
 }
 
 // Handle user input commands and delegate to appropriate methods
@@ -175,10 +175,8 @@ void ConsoleManager::processCommand(const std::string &command)
       is_initialized = true; // Set the initialized flag
 
       // Debugging Purposes (generates <param> processes)
-      // generateProcesses(7);
-    }
-    else
-    {
+      // generateProcesses(4);
+    } else {
       std::cerr << "Unable to open file \"config.txt\"." << std::endl;
     }
   }
@@ -223,11 +221,11 @@ void ConsoleManager::processCommand(const std::string &command)
   }
 
   else if (command == "process-smi"){
-    processsmi();
+    processsmi(max_overall_mem);
   }
 
   else if (command == "vmstat"){
-    vmstat(max_overall_mem);
+    vmstat(max_overall_mem, cpu_clock);
   }
   // Start a scheduler test in a separate thread
   else if (command == "scheduler-test")
