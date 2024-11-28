@@ -29,7 +29,7 @@ void ConsoleScreen::printHeaderUsingHandle() const
     << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" 
     << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
     << "\n"
-    << "Last updated: 11-22-2024\n";
+    << "Last updated: 11-29-2024\n";
     SetConsoleTextAttribute(console_handle, 7);
     std::cerr << "------------------------------------------\n";
     SetConsoleTextAttribute(console_handle, 14);
@@ -53,7 +53,7 @@ void ConsoleScreen::printHeader()
     << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" 
     << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
     << "\n"
-    << "Last updated: 11-22-2024\n"
+    << "Last updated: 11-29-2024\n"
     << DEFAULT << "------------------------------------------\n"
     << "Type 'exit' to quit, 'clear' to clear the screen" 
     << DEFAULT << std::endl;

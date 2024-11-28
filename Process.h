@@ -5,6 +5,7 @@
 #include <vector>
 #include "ICommand.h"
 #include "PrintCommand.h"
+#include <memory>
 
 /**
  * @class Process

@@ -76,7 +76,7 @@ class Scheduler
     void setClock(Clock* cpu_clock); 
 
   private:
-    Scheduler() = default;
+    // Scheduler() = default;
     Scheduler(const Scheduler&) = delete;
     Scheduler& operator=(const Scheduler&) = delete; 
     /**
