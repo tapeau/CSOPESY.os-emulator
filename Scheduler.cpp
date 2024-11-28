@@ -231,8 +231,13 @@ void Scheduler::scheduleFCFS()
         logActiveThreads(assigned_core, nullptr); // Log the thread state after completion.
         queue_condition.notify_all(); // Notify other threads of availability.
       }
+    } else if (process->hasFinished() && process->isAllocated()) {
+      // scuffed check for some reason memory is not deallocating in else statement above
+      // well adding this works.
+      std::scoped_lock lock{fcfs_mutex};
+      MemoryManager::getInstance().getAllocator()->deallocate(process);
     }
-    cpu_active++;
+
   }
   cpu_clock->setActive(cpu_active);
 }
@@ -403,9 +408,9 @@ void Scheduler::logActiveThreads(int core_id, std::shared_ptr<Process> current_p
   std::deque<std::shared_ptr<Process>> temp_queue = process_queue; // Copy the queue.
   queue_lock.unlock(); // Unlock the queue mutex.
 
-  while (!temp_queue.empty())
-  {
-    debug_file << temp_queue.front()->getName() << " "; // Log each process ID.
+  while (!temp_queue.empty()) {
+    debug_file << temp_queue.front()->getName();
+    // << ": " << temp_queue.front()->getCPUCoreID() << ", mem_alloc: " << ((temp_queue.front()->isAllocated())?  "Allocated" : "Not Allocated") << " "; // Log each process ID.
     temp_queue.pop_front();
   }
   debug_file << std::endl;
