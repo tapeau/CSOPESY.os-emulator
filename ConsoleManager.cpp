@@ -71,6 +71,15 @@ void ConsoleManager::showAllScreens()
   screen_manager.showAllProcesses(process_manager->getAllProcesses(), cpu_count);
 }
 
+void ConsoleManager::processsmi(int max_mem)
+{
+  screen_manager.process_smi(process_manager->getAllProcesses(), cpu_count, max_mem)
+}
+void ConsoleManager::vmstat(int max_mem)
+{
+  screen_manager.vmstat(process_manager->getAllProcesses(), cpu_count, max_mem, clock)
+}
+
 // Generate a utilization report and save it to a file
 void ConsoleManager::reportUtilization()
 {
@@ -211,6 +220,13 @@ void ConsoleManager::processCommand(const std::string &command)
   else if (command == "report-util")
   {
     reportUtilization();
+  }
+
+   else if (command == "process-smi"){
+    processsmi();
+  }
+  else if (command == "vmstat"){
+    vmstat(max_overall_mem);
   }
   // Start a scheduler test in a separate thread
   else if (command == "scheduler-test")

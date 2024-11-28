@@ -26,7 +26,7 @@ class Scheduler
      * @brief Constructor that initializes the scheduler.
      */
     Scheduler();
-
+    static Scheduler& getInstance();
     /**
      * @brief Adds a process to the scheduling queue.
      * @param process Shared pointer to the process to be added.
@@ -72,7 +72,15 @@ class Scheduler
      */
     void setClock(Clock* cpu_clock); 
 
+    int getActive();
+
   private:
+    Scheduler() = default;
+
+    // **Delete copy constructor and assignment operator**
+    // Prevents copying or assigning the Singleton instance.
+    Scheduler(const Scheduler&) = delete;
+    Scheduler& operator=(const Scheduler&) = delete;
     /**
      * @brief Main function executed by each worker thread.
      * @param core_id ID of the CPU core assigned to the thread.
@@ -110,6 +118,7 @@ class Scheduler
     std::ofstream debug_file; ///< Output stream for logging debug information.
     int ready_threads; ///< Number of threads ready to execute processes.
     Clock* cpu_clock; ///< CPU clock object to be used.
+    int active_ticks = 0;
 
     int cpu_count; ///< Total number of available CPUs.
     int delay_per_execution; ///< Execution delay per command in milliseconds.
@@ -124,6 +133,7 @@ class Scheduler
     std::mutex fcfs_mutex;
     std::mutex rr_mutex;
     std::condition_variable queue_condition; ///< Condition variable for process queue updates.
+    std::mutex active_ticks_mutex;
 
     std::mutex start_mutex; ///< Mutex for synchronizing thread startup.
     std::condition_variable start_condition; ///< Condition variable to signal thread startup.

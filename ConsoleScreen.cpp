@@ -1,7 +1,10 @@
 #include "ConsoleScreen.h"
 #include "CoreStateManager.h"
 #include "MemoryManager.h"
+#include "PagingAllocator.h"
+#include "Scheduler.h"
 #include <windows.h>
+#include <iomanip>
 
 // ANSI escape sequences for terminal text coloring.
 const char DEFAULT[] = "\033[0m";  // Resets the color back to default.
@@ -27,7 +30,7 @@ void ConsoleScreen::printHeaderUsingHandle() const
     << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" 
     << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
     << "\n"
-    << "Last updated: 11-22-2024\n";
+    << "Last updated: 11-29-2024\n";
     SetConsoleTextAttribute(console_handle, 7);
     std::cerr << "------------------------------------------\n";
     SetConsoleTextAttribute(console_handle, 14);
@@ -51,7 +54,7 @@ void ConsoleScreen::printHeader()
     << "Developers:\n" << "Alamay, Carl Justine\n" <<"Ang, Czarina Damienne\n" 
     << "Culanag, Saimon Russel\n" << "Tapia, John Lorenzo\n"
     << "\n"
-    << "Last updated: 11-22-2024\n"
+    << "Last updated: 11-29-2024\n"
     << DEFAULT << "------------------------------------------\n"
     << "Type 'exit' to quit, 'clear' to clear the screen" 
     << DEFAULT << std::endl;
@@ -162,6 +165,118 @@ void ConsoleScreen::streamAllProcesses(std::map<std::string, std::shared_ptr<Pro
     out << "------------------------------------------------\n";
 }
 
+void ConsoleScreen::process_smi(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem)
+{
+    static std::mutex process_list_mutex;  // Mutex for thread safety
+
+    // Lock the mutex for the scope of this function
+    std::lock_guard<std::mutex> lock(process_list_mutex);
+     // Buffers to store formatted output for different process states.
+    std::stringstream ready, running, finished;
+    int core_usage = 0;  // Tracks the number of CPU cores currently used.
+    int mem_usage = 0; //tracks the number of memory used
+
+    // Retrieve the state of each core from CoreStateManager (singleton).
+    const std::vector<bool>& core_states = CoreStateManager::getInstance().getCoreStates();
+
+    std::map<int, std::vector<std::shared_ptr<Process>>> processes;
+
+    for (const auto &pair : process_list){
+
+        const std::shared_ptr<Process> process = pair.second;
+        int id = process->getCPUCoreID();
+        processes[id].push_back(process);
+    }
+
+    // Count the number of active cores (core_usage).
+    for (bool core_state : core_states)
+    {
+        if (core_state)
+        {
+            core_usage++;
+        }
+    }
+
+    for(int i = 0; i < core_states.size(); i++){
+        if(core_states[i]){
+            for (const auto& proc:processes[i]){
+                mem_usage += proc->getMemReq();
+            }
+        }
+    }
+
+    std::cout << "------------------------------------------\n" << std::endl;
+    std::cout << "|  PROCESS-SMI V01.00         Driver Version: 01.00  |\n" << std::endl;
+    std::cout << "------------------------------------------\n" << std::endl;
+    std::cout << "CPU-Util: " << core_usage * 100 / cpu_count << "%\n" << std::endl;
+    std::cout << "Memory Usage: " << mem_usage << "MiB / "  << max_mem << "MiB" << std::endl;
+    std::cout << "Memory Util: " << mem_usage * 100 / max_mem << "%\n\n" << std::endl;
+    std::cout << "==========================================\n" << std::endl;
+    std::cout << "Running processes and memory usage: \n" << std::endl;
+    std::cout << "------------------------------------------\n" << std::endl;
+    for (const auto &pair : process_list){
+
+        const std::shared_ptr<Process> process = pair.second;
+
+        if (process->getState() == Process::RUNNING){
+            std::cout << process->getName() << " " << process->getMemReq() << "MiB\n" << std::endl;
+        }
+        else{
+            std::cout << "There are no active processes." << std::endl;
+        }
+    }
+    std::cout << "------------------------------------------\n" << std::endl;
+}
+
+void ConsoleScreen::vmstat(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem, Clock* clock)
+{
+    static std::mutex process_list_mutex;  // Mutex for thread safety
+
+    // Lock the mutex for the scope of this function
+    std::lock_guard<std::mutex> lock(process_list_mutex);
+     // Buffers to store formatted output for different process states.
+    std::stringstream ready, running, finished;
+    int core_usage = 0;  // Tracks the number of CPU cores currently used.
+    int mem_usage = 0; //tracks the number of memory used
+
+    // Retrieve the state of each core from CoreStateManager (singleton).
+    const std::vector<bool>& core_states = CoreStateManager::getInstance().getCoreStates();
+
+    std::map<int, std::vector<std::shared_ptr<Process>>> processes;
+
+    for (const auto &pair : process_list){
+
+        const std::shared_ptr<Process> process = pair.second;
+        int id = process->getCPUCoreID();
+        processes[id].push_back(process);
+    }
+
+    // Count the number of active cores (core_usage).
+    for (bool core_state : core_states)
+    {
+        if (core_state)
+        {
+            core_usage++;
+        }
+    }
+
+    for(int i = 0; i < core_states.size(); i++){
+        if(core_states[i]){
+            for (const auto& proc:processes[i]){
+                mem_usage += proc->getMemReq();
+            }
+        }
+    }
+    
+    std::cout << std::setw(10) << max_mem << " K total memory\n" << std::endl;
+    std::cout << std::setw(10) << mem_usage << " K used memory \n" << std::endl;
+    std::cout << std::setw(10) << (max_mem - mem_usage) << " K free memory\n" << std::endl;
+    std::cout << std::setw(10) << (clock->getClock() - Scheduler::getInstance().getActive()) << " idle CPU ticks\n" << std::endl;
+    std::cout << std::setw(10) << Scheduler::getInstance().getActive() << " active CPU ticks\n" << std::endl;
+    std::cout << std::setw(10) << clock->getClock() << " total CPU ticks\n" << std::endl;
+    std::cout << std::setw(10) << PagingAllocator::getInstance().getPageIn() << " pages paged in\n" << std::endl;
+    std::cout << std::setw(10) << PagingAllocator::getInstance().getPageOut() << " pages paged out\n" << std::endl;
+}
 /**
  * Shows the updated state of a specific process on the console.
  * If the process is running, it prints the current progress. 

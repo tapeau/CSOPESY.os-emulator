@@ -46,6 +46,8 @@ public:
     void createScreenSilent(const std::string &session_name);
     void showAllScreens();
     void reportUtilization();
+    void processsmi(int max_mem);
+    void vmstat(int max_mem);
     void processCommand(const std::string &command);
     void generateProcesses(int num_process); // command to generate processes mainly for debugging 
 };

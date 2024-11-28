@@ -12,7 +12,6 @@
 //
 // TODO: Fix bug with scheduler's process_queue is never empty compared with
 // FlatMemoryAllocator 
-
 PagingAllocator::PagingAllocator(size_t max_mem_size, size_t mem_per_frame)
   : max_mem_size(max_mem_size), mem_per_frame(mem_per_frame)
 {
@@ -25,6 +24,23 @@ PagingAllocator::PagingAllocator(size_t max_mem_size, size_t mem_per_frame)
     // std::cout << free_frames[i] << " ";
   }
 }
+
+PagingAllocator& PagingAllocator::getInstance()
+{
+    static PagingAllocator instance;  // Thread-safe static initialization in C++11 and later.
+    return instance;
+}
+
+int PagingAllocator::getPageIn() const
+{
+  return pageIn;
+}
+
+int PagingAllocator::getPageOut() const
+{
+  return pageOut;
+}
+
 
 size_t PagingAllocator::allocFrames(size_t num_frame, size_t pid)
 {

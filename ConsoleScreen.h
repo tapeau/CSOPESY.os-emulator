@@ -39,4 +39,8 @@ public:
 
     // Retrieves the current timestamp.
     std::string getCurrentTimestamp();
+
+    void process_smi(std::map<std::string, std::shared_ptr<Process>> process_list, int num_core, int max_mem);
+
+    void vmstat(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem, Clock* clock);
 };

@@ -1,5 +1,6 @@
 #include <random>
 #include "Process.h"
+#include <memory>
 
 // Constructor implementation.
 Process::Process( size_t process_id, const std::string &process_name, const std::string &creation_time, 

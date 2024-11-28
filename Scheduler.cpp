@@ -20,6 +20,12 @@ void Scheduler::addProcess(std::shared_ptr<Process> process)
   queue_condition.notify_all(); // Notify a waiting thread that a new process is available.
 }
 
+Scheduler& Scheduler::getInstance()
+{
+    static Scheduler instance;  // Thread-safe static initialization in C++11 and later.
+    return instance;
+}
+
 // Set the scheduling algorithm to be used (e.g., Round Robin or FCFS).
 void Scheduler::setAlgorithm(const std::string& algorithm)
 {
@@ -51,6 +57,11 @@ void Scheduler::setClock(Clock* cpu_clock)
   this->cpu_clock = cpu_clock;
 }
 
+int Scheduler::getActive()
+{
+  std::lock_guard<std::mutex> lock(active_ticks_mutex);
+  return active_ticks; //mutex lock?
+}
 // Start the scheduler by launching worker threads equal to the number of CPUs.
 void Scheduler::start()
 {
@@ -197,6 +208,7 @@ void Scheduler::scheduleFCFS()
                 return cpu_clock->getClock() > last_clock_value;
                 });
             last_clock_value = cpu_clock->getClock();
+            active_ticks++;
           }
           else {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -311,6 +323,7 @@ void Scheduler::scheduleRR(int core_id)
               return cpu_clock->getClock() > last_clock_value;
               });
           last_clock_value = cpu_clock->getClock();
+          active_ticks++;
         }
         else {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
