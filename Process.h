@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <mutex>
 #include <string>
 #include <vector>
@@ -56,7 +57,7 @@ public:
      * @param min_instructions Minimum number of instructions the process will execute.
      * @param max_instructions Maximum number of instructions the process can execute.
      */
-    Process(int process_id, const std::string &process_name, const std::string &creation_time, 
+    Process(size_t process_id, const std::string &process_name, const std::string &creation_time, 
             int core_id, int min_instructions, int max_instructions, size_t min_mem, size_t max_mem);
 
     /**
@@ -102,7 +103,7 @@ public:
     /**
      * @return The unique process ID (PID).
      */
-    int getPID() const;
+    size_t getPID() const;
 
     /**
      * @return The name of the process.
@@ -140,7 +141,7 @@ public:
     void generateMem(size_t min_mem, size_t max_mem); // generate process memory based on config file
 
 private:
-    int process_id;  // Unique identifier for the process.
+    size_t process_id;  // Unique identifier for the process.
     std::string process_name;  // Name of the process.
     std::string creation_time;  // Time the process was created.
     std::vector<std::shared_ptr<ICommand>> command_list;  // List of commands the process will execute.

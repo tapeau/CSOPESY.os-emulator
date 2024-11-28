@@ -135,14 +135,15 @@ void Scheduler::scheduleFCFS()
       // process_queue.pop_front(); // Remove it from the queue.
     }
 
-    if (process->isAllocated()) {
+    // have to add logic that the process have not been allocated to a cpu
+    if (process->isAllocated() && process->getCPUCoreID() == -1) {
       // Try to find an available core.
       for (int i = 1; i <= cpu_count; ++i)
       {
         // have to add a lock here since implementation of cores in this program 
         // is not entirely contained it its ownself but multiple threads that sort of 
         // have the same resources with multiple instance of execution
-        std::scoped_lock lock{fcfs_mutex};
+        // std::scoped_lock lock{fcfs_mutex};
         if (!CoreStateManager::getInstance().getCoreState(i)) // If the core is not in use.
         {
           assigned_core = i; // Assign this core to the process.
@@ -385,7 +386,7 @@ void Scheduler::logActiveThreads(int core_id, std::shared_ptr<Process> current_p
   if (current_process)
   {
     // Log the current process details.
-    debug_file << "Current Process: " << current_process->getPID() << "(" 
+    debug_file << "Current Process: " << current_process->getName() << "(" 
       << current_process->getCommandCounter() << "/" << current_process->getLinesOfCode() << "), ";
   }
   else

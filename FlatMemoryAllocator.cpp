@@ -76,7 +76,9 @@ void FlatMemoryAllocator::deallocate(std::shared_ptr<Process> process)
   // finds the process if it exists in process_in_mem
   std::lock_guard<std::mutex> lock(mem_mtx);
   auto it = std::find(processes_in_mem.begin(), processes_in_mem.end(), process);
+  // if the process is found in memory
   if (it != processes_in_mem.end()) {
+    // erase it
     processes_in_mem.erase(it);
   }
 
