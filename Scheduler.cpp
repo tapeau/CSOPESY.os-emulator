@@ -123,13 +123,13 @@ void Scheduler::scheduleFCFS()
       if (!is_running) break; // Exit if the scheduler is stopped.
 
       process = process_queue.front(); // Get the first process from the queue.
+      process_queue.pop_front();   // Remove it from the queue.
+
       void* memory = MemoryManager::getInstance().getAllocator()->allocate(process); // memory returns nullptr if it cannot allocate the process in memory
       if (memory != nullptr) { // if process is successfully allocated in memory 
-        process_queue.pop_front();   // Remove it from the queue.
       } else {
         // std::cout <<" Insufficient memory for process " << process->getName() << "(ID: " << process->getPID() << ")\n";
         // else statment is when memory is insufficient, therefore we cannot execute the process it is put back at the ready queue
-        process_queue.pop_front();
         process_queue.push_back(process);
       }
       // process_queue.pop_front(); // Remove it from the queue.
@@ -241,8 +241,7 @@ void Scheduler::scheduleFCFS()
 // Round Robin (RR) scheduling algorithm.
 void Scheduler::scheduleRR(int core_id)
 {
-  while (is_running)
-  {
+  while (is_running) {
     std::shared_ptr<Process> process;
     /*
      * Process Allocation
@@ -255,21 +254,30 @@ void Scheduler::scheduleRR(int core_id)
       if (!is_running) break; // Exit if the scheduler is stopped.
 
       process = process_queue.front(); // Get the first process from the queue.
+      process_queue.pop_front();   // Remove it from the queue.
       void* memory = MemoryManager::getInstance().getAllocator()->allocate(process); // memory returns nullptr if it cannot allocate the process in memory
+      // std::cout << "Core: " << core_id << " is allocating " << process->getName() << " in memory\n";
       if (memory != nullptr) { // if process is successfully allocated in memory 
                                // std::cout << "Allocated mem for process " << process->getName() << " (ID: " << process->getPID() << ")\n";
-        process_queue.pop_front();   // Remove it from the queue.
+        // std::cout << "Core: " << core_id << " successfully allocated " << process->getName() << "\n";
       } else {
         // std::cout <<" Insufficient memory for process " << process->getName() << "(ID: " << process->getPID() << ")\n";
         // else statment is when memory is insufficient, therefore we cannot execute the process it is put back at the ready queue
-          process_queue.pop_front();
-          process_queue.push_back(process);
+        process_queue.push_back(process);
       }
     }
-    // std::cout << "Current Process: " << process->getName() << " in_memory: " << process->isAllocated() << "\n";
 
-    if (process->isAllocated())
-    {
+    if (process->isAllocated() && process->getCPUCoreID() == -1) {
+      process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
+      process->setCPUCoreID(core_id); // Assign the current core to the process.
+      logActiveThreads(core_id, process); // Log the active threads.
+
+      if (process->getCPUCoreID() == core_id) {
+        CoreStateManager::getInstance().flipCoreState(core_id, process->getName()); // Mark the core as in use.
+      } else {
+        continue;
+      }
+
       {
         std::lock_guard<std::mutex> lock(active_threads_mutex);
         active_threads++; // Increment the active thread count.
@@ -277,20 +285,10 @@ void Scheduler::scheduleRR(int core_id)
         // Ensure the active thread count does not exceed available CPUs.
         if (active_threads > cpu_count)
         {
-          std::cerr << "CPU limit exceeded!" << std::endl;
+          // std::cerr << "CPU limit exceeded!" << std::endl;
           active_threads--;
           continue;
         }
-      }
-
-      logActiveThreads(core_id, process); // Log the active threads.
-      process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
-      process->setCPUCoreID(core_id); // Assign the current core to the process.
-
-      // TODO: add some checks in here since cpu is always at maximum for both PagingAllocator
-      // and FlatMemoryAllocator
-      if (process->getCPUCoreID() == core_id) {
-        CoreStateManager::getInstance().flipCoreState(core_id, process->getName()); // Mark the core as in use.
       }
 
       int last_clock_value = cpu_clock->getClock();
@@ -342,21 +340,22 @@ void Scheduler::scheduleRR(int core_id)
       }
 
       // If the process is not finished, put it back in the queue.
-      if (!process->hasFinished())
-      {
-        process->setState(Process::ProcessState::READY); // Set the process state to READY.
+      if (!process->hasFinished()) {
         std::scoped_lock lock{queue_mutex};
+        process->setState(Process::ProcessState::READY); // Set the process state to READY.
         // std::cout << "Items in process_queue: ";
         // for (auto& elem : process_queue) {
         //   std::cout << elem->getName() << "\n";
         // }
         // std::cout << "Items in process_queue: ";
         // push_back to queue if it is not in the queue to prevent duplicates in process_queue (ready queue)
+        process->setCPUCoreID(-1);
         if ( (std::find(process_queue.begin(), process_queue.end(), process) == process_queue.end()) ) {
           process_queue.push_back(process);
         }
       } else {
         std::scoped_lock lock{queue_mutex};
+        // process->setCPUCoreID(-1);
         process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
         MemoryManager::getInstance().getAllocator()->deallocate(process);
       }
@@ -367,7 +366,12 @@ void Scheduler::scheduleRR(int core_id)
       logActiveThreads(core_id, nullptr); // Log the thread state after completion.
       queue_condition.notify_all(); // Notify other threads of availability.
       CoreStateManager::getInstance().flipCoreState(core_id, ""); // Mark the core as idle.
-    } 
+    } else if (process->hasFinished() && process->isAllocated()) {
+      // scuffed check for some reason memory is not deallocating in else statement above
+      // well adding this works.
+      std::scoped_lock lock{rr_mutex};
+      MemoryManager::getInstance().getAllocator()->deallocate(process);
+    }
   }
 }
 
@@ -383,14 +387,12 @@ void Scheduler::logActiveThreads(int core_id, std::shared_ptr<Process> current_p
     << "." << std::setfill('0') << std::setw(3) << ms.count() << " ";
   debug_file << "Core ID: " << core_id << ", Active Threads: " << active_threads << ", ";
 
-  if (current_process)
-  {
+  if (current_process) {
     // Log the current process details.
     debug_file << "Current Process: " << current_process->getName() << "(" 
       << current_process->getCommandCounter() << "/" << current_process->getLinesOfCode() << "), ";
   }
-  else
-  {
+  else {
     debug_file << "Current Process: None, ";
   }
 
@@ -400,9 +402,9 @@ void Scheduler::logActiveThreads(int core_id, std::shared_ptr<Process> current_p
   std::deque<std::shared_ptr<Process>> temp_queue = process_queue; // Copy the queue.
   queue_lock.unlock(); // Unlock the queue mutex.
 
-  while (!temp_queue.empty())
-  {
-    debug_file << temp_queue.front()->getName() << " "; // Log each process ID.
+  while (!temp_queue.empty()) {
+    debug_file << temp_queue.front()->getName();
+    // << ": " << temp_queue.front()->getCPUCoreID() << ", mem_alloc: " << ((temp_queue.front()->isAllocated())?  "Allocated" : "Not Allocated") << " "; // Log each process ID.
     temp_queue.pop_front();
   }
   debug_file << std::endl;

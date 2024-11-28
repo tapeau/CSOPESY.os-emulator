@@ -53,7 +53,7 @@ void PagingAllocator::deallocFrames(size_t num_frame, size_t frame_index)
 
 void* PagingAllocator::allocate(std::shared_ptr<Process> process)
 {
-  std::lock_guard<std::mutex> lock{mem_mtx};
+  std::lock_guard<std::mutex> lock(mem_mtx);
   if (!process->isAllocated()) {
     size_t process_id = process->getPID();
     // size_t proc_frames_need = process->getMemReq() / mem_per_frame; 
@@ -64,31 +64,33 @@ void* PagingAllocator::allocate(std::shared_ptr<Process> process)
       // std::cout << "Cannot allocate" << ": " << process->getName() << " Not enough frames.\n";
       return nullptr;
     }
+    // DEBUGGING
+    // std::cout << "Before allocation: \n";
+    // std::cout << "Free frames (before): ";
+    // for (const auto& frame : free_frames) {
+    //   std::cout << frame << " ";
+    // }
+    // std::cout << "\n";
+    // for (const auto& frame : frames) {
+    //   std::cout << frame.first << ": " << frame.second << "\n";
+    // }
     // Allocate frames for the process
-    std::cout << "Before allocation: \n";
-    std::cout << "Free frames (before): ";
-    for (const auto& frame : free_frames) {
-      std::cout << frame << " ";
-    }
-    std::cout << "\n";
-    for (const auto& frame : frames) {
-      std::cout << frame.first << ": " << frame.second << "\n";
-    }
     size_t frame_index = allocFrames(proc_frames_need, process_id);
     process->memAlloc(0, 1);
+    // DEBUGGING
     // std::cout << "Successfully allocated " << process->getName() << " with " << proc_frames_need << " in Memory\n";
-    std::cout << "After allocation: \n";
-    std::cout << "Free frames (after): ";
-    for (const auto& frame : free_frames) {
-      std::cout << frame << " ";
-    }
-    std::cout << "\n";
-    for (const auto frame : frames) {
-      std::cout << frame.first << ": " << frame.second << "\n";
-    }
+    // std::cout << "After allocation: \n";
+    // std::cout << "Free frames (after): ";
+    // for (const auto& frame : free_frames) {
+    //   std::cout << frame << " ";
+    // }
+    // std::cout << "\n";
+    // for (const auto frame : frames) {
+    //   std::cout << frame.first << ": " << frame.second << "\n";
+    // }
     return reinterpret_cast<void*>(frame_index);
   } 
-    return nullptr;
+  return nullptr;
 }
 
 void PagingAllocator::deallocate(std::shared_ptr<Process> process)
@@ -99,7 +101,7 @@ void PagingAllocator::deallocate(std::shared_ptr<Process> process)
     auto it = std::find_if(frames.begin(), frames.end(),
         [proc_id](const auto& entry) { return entry.second == proc_id; });
 
-    std::cout << "Deallocating " << process->getName() << " Status: " << process->hasFinished() << "\n";
+    // std::cout << "Deallocating " << process->getName() << " Status: " << process->hasFinished() << "\n";
 
     while (it != frames.end()) {
       size_t frame_index = it->first;
@@ -107,15 +109,15 @@ void PagingAllocator::deallocate(std::shared_ptr<Process> process)
       it = std::find_if(frames.begin(), frames.end(), 
           [proc_id](const auto& entry) { return entry.second == proc_id; });
     }
-    std::cout << "After deallocation: \n";
-    std::cout << "Free frames (after): ";
-    for (const auto& frame : free_frames) {
-      std::cout << frame << " ";
-    }
-    std::cout << "\n";
-    for (const auto frame : frames) {
-      std::cout << frame.first << ": " << frame.second << "\n";
-    }
+    // std::cout << "After deallocation: \n";
+    // std::cout << "Free frames (after): ";
+    // for (const auto& frame : free_frames) {
+    //   std::cout << frame << " ";
+    // }
+    // std::cout << "\n";
+    // for (const auto frame : frames) {
+    //   std::cout << frame.first << ": " << frame.second << "\n";
+    // }
   
   process->memDealloc();
 }

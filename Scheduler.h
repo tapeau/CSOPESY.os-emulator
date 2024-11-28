@@ -122,8 +122,8 @@ class Scheduler
     std::mutex queue_mutex; ///< Mutex for synchronizing access to the process queue.
     std::mutex active_threads_mutex; ///< Mutex for synchronizing the active thread count.
     std::mutex fcfs_mutex;
+    std::mutex rr_mutex;
     std::condition_variable queue_condition; ///< Condition variable for process queue updates.
-
 
     std::mutex start_mutex; ///< Mutex for synchronizing thread startup.
     std::condition_variable start_condition; ///< Condition variable to signal thread startup.

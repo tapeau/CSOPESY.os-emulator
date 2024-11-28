@@ -147,7 +147,7 @@ private:
     std::vector<std::shared_ptr<ICommand>> command_list;  // List of commands the process will execute.
 
     size_t command_counter = 0;  // Counter for the number of executed commands.
-    int core_id;  // ID of the CPU core assigned to the process.
+    int core_id = -1;  // ID of the CPU core assigned to the process.
     ProcessState process_state;  // Current state of the process.
     RequirementFlags requirement_flags;  // Flags indicating the resource requirements of the process.
 
