@@ -111,6 +111,8 @@ void Scheduler::run(int core_id)
 // FCFS (First-Come, First-Serve) scheduling algorithm.
 void Scheduler::scheduleFCFS()
 {
+  int cpu_active = 0;
+    
   while (is_running) {
     std::shared_ptr<Process> process;
     int assigned_core = -1; // Core to which the process will be assigned.
@@ -230,12 +232,15 @@ void Scheduler::scheduleFCFS()
         queue_condition.notify_all(); // Notify other threads of availability.
       }
     }
+    cpu_active++;
   }
+  cpu_clock->setActive(cpu_active);
 }
 
 // Round Robin (RR) scheduling algorithm.
 void Scheduler::scheduleRR(int core_id)
 {
+  int cpu_active = 0;
   while (is_running)
   {
     std::shared_ptr<Process> process;
@@ -364,7 +369,9 @@ void Scheduler::scheduleRR(int core_id)
       queue_condition.notify_all(); // Notify other threads of availability.
       CoreStateManager::getInstance().flipCoreState(core_id, ""); // Mark the core as idle.
     } 
+    cpu_active++;
   }
+  cpu_clock->setActive(cpu_active);
 }
 
 // Log the current state of active threads and processes to the debug file.

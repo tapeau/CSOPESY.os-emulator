@@ -9,6 +9,16 @@ int Clock::getClock()
     return cpu_clock.load();  // Ensures atomic access to the clock count
 }
 
+int Clock::getActive()
+{
+    return cpu_active;
+}
+
+void Clock::setActive(int num)
+{
+    this->cpu_active = cpu_active;
+}
+
 // Starts the clock, launching a thread that increments the clock cycle count
 void Clock::startClock()
 {

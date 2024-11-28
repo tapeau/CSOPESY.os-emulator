@@ -8,6 +8,7 @@
 #include <iostream>
 #include <mutex>
 #include "Process.h"
+#include "Clock.h"
 
 // The ConsoleScreen class manages the console display of processes and user interactions.
 class ConsoleScreen
@@ -39,7 +40,7 @@ public:
 
     void process_smi(std::map<std::string, std::shared_ptr<Process>> process_list, int num_core, int max_mem);
 
-    void vmstat(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem);
+    void vmstat(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem, Clock* clock);
 
     // Retrieves the current timestamp.
     std::string getCurrentTimestamp();

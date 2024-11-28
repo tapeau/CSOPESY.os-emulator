@@ -224,7 +224,7 @@ void ConsoleScreen::process_smi(std::map<std::string, std::shared_ptr<Process>> 
     std::cout << "------------------------------------------\n" << std::endl;
 }
 
-void ConsoleScreen::vmstat(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem)
+void ConsoleScreen::vmstat(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem, Clock* clock)
 {
     static std::mutex process_list_mutex;  // Mutex for thread safety
 
@@ -267,11 +267,11 @@ void ConsoleScreen::vmstat(std::map<std::string, std::shared_ptr<Process>> proce
     std::cout << max_mem << " K total memory\n" << std::endl; //format this and change vars
     std::cout << mem_usage << " K used memory \n" << std::endl;
     std::cout << max_mem - mem_usage << " K free memory\n" << std::endl;
-    std::cout << max_mem << " idle CPU ticks\n" << std::endl;
-    std::cout << max_mem << " active CPU ticks\n" << std::endl;
-    std::cout << max_mem << " total CPU ticks\n" << std::endl;
-    std::cout << max_mem << " pages paged in\n" << std::endl;
-    std::cout << max_mem << " pages paged out\n" << std::endl;
+    std::cout << clock->getClock() - clock->getActive() << " idle CPU ticks\n" << std::endl;
+    std::cout << clock->getActive() << " active CPU ticks\n" << std::endl;
+    std::cout << clock->getClock() << " total CPU ticks\n" << std::endl;
+    std::cout << max_mem << " pages paged in\n" << std::endl; //
+    std::cout << max_mem << " pages paged out\n" << std::endl; //
 }
 
 /**
