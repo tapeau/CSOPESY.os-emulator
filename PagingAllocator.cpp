@@ -6,13 +6,6 @@
 #include <mutex>
 #include <sstream>
 
-
-// TODO: Fix bug with FCFS, when allocating memory for a process it allocates 
-// two processes with same CPU
-//
-// TODO: Fix bug with scheduler's process_queue is never empty compared with
-// FlatMemoryAllocator 
-
 PagingAllocator::PagingAllocator(size_t max_mem_size, size_t mem_per_frame)
   : max_mem_size(max_mem_size), mem_per_frame(mem_per_frame)
 {
