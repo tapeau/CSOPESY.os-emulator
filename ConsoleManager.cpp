@@ -1,6 +1,5 @@
+#include <cmath>
 #include <iostream>
-#include <cstdlib>
-#include <string>
 #include "ConsoleManager.h"
 #include "MemoryManager.h"
 
@@ -136,6 +135,7 @@ void ConsoleManager::processCommand(const std::string &command)
       config_file >> temp >> min_instructions;
       config_file >> temp >> max_instructions;
       config_file >> temp >> delays_per_execution;
+      // all memory related are powers of 2
       config_file >> temp >> max_overall_mem;
       config_file >> temp >> mem_per_frame;
       config_file >> temp >> min_mem_per_proc;
@@ -153,9 +153,12 @@ void ConsoleManager::processCommand(const std::string &command)
       std::cout << "delays-per-exec: " << delays_per_execution << std::endl;
       std::cout << "max-overall-mem: " << max_overall_mem << std::endl;
       std::cout << "mem-per-frame: " << mem_per_frame << std::endl; // memory size per page
+      // min_mem_per_proc and max_mem_per_proc will be saved in n format from 2^n
       std::cout << "min-mem-per-proc: " << min_mem_per_proc << std::endl;
       std::cout << "max-mem-per-proc: " << max_mem_per_proc << std::endl;
 
+      min_mem_per_proc = log2(min_mem_per_proc);
+      max_mem_per_proc = log2(max_mem_per_proc);
 
       // Initialize CPU clock
       cpu_clock = new Clock();
@@ -164,7 +167,7 @@ void ConsoleManager::processCommand(const std::string &command)
       // Initialize the process manager with configuration parameters
       process_manager = new ProcessManager(
           min_instructions, max_instructions, cpu_count, scheduler_algorithm,
-          delays_per_execution, quantum_cycles, cpu_clock, max_overall_mem, 
+          delays_per_execution, quantum_cycles, cpu_clock,
           mem_per_frame, min_mem_per_proc, max_mem_per_proc
           );
 
@@ -177,7 +180,6 @@ void ConsoleManager::processCommand(const std::string &command)
       // Debugging Purposes (generates <param> processes)
       // generateProcesses(4);
     } else {
-      std::cerr << "Unable to open file \"config.txt\"." << std::endl;
     }
   }
   // Create a new screen session with the given name

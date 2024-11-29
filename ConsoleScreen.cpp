@@ -241,9 +241,7 @@ void ConsoleScreen::showProcessUpdated(std::shared_ptr<Process> process)
         std::cout << BLUE << "ID: " << process->getName() << DEFAULT << std::endl;
         std::cout << "Current instruction line: " << process->getCommandCounter() << std::endl;
         std::cout << "Lines of code: " << process->getLinesOfCode() << std::endl;
-    }
-    else
-    {
+    } else {
         std::cout << "Finished!" << std::endl;
     }
     std::cout << std::endl;
@@ -272,18 +270,13 @@ void ConsoleScreen::showScreen(std::shared_ptr<Process> process)
         std::cout << "Enter a command: ";
         std::getline(std::cin, command);
 
-        if (command == "process-smi")
-        {
+        if (command == "process-smi") {
             showProcessUpdated(process);  // Show updated process info.
-        }
-        else if (command == "exit")
-        {
+        } else if (command == "exit") {
             system("cls");  // Clear the console.
             printHeaderUsingHandle();  // Reprint the header.
             break;
-        }
-        else
-        {
+        } else {
             std::cout << "Unknown command. Please try again." << std::endl;
         }
     }

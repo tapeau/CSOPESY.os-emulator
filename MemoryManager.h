@@ -1,7 +1,8 @@
 #include <memory>
 #include <vector>
+#include <deque>
+
 #include "IMemoryAllocator.h"
-#include "Scheduler.h"
 
 /*
  * Singleton Implementation from: 
@@ -22,7 +23,8 @@ class MemoryManager
     uint64_t getMemUsed() const;
     static void destroy();
     std::shared_ptr<IMemoryAllocator> getAllocator();
-    void initAllocator(size_t size, size_t min_mem);
+    void initAllocator(size_t max_overall_mem, size_t mem_per_frame);
+    // std::deque<std::shared_ptr<Process>>& ready_queue);
     void writeMemInfoToFile(size_t qq) const;
     void setqq(int qq); 
 

@@ -25,7 +25,6 @@ class ProcessManager
     int min_instructions;        // Minimum number of instructions a process can generate.
     int max_instructions;        // Maximum number of instructions a process can generate.
     Clock* cpu_clock;            // CPU clock object
-    int max_overall_mem; //Overall memory in bytes
     int mem_per_frame; //Size of memory in KB per frame. This is also the memory size per page
     size_t min_mem_per_proc; // min memory per process
     size_t max_mem_per_proc; // max memory per process
@@ -46,7 +45,7 @@ class ProcessManager
      */
     ProcessManager( int min_instructions, int max_instructions, int cpu_count, 
         std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle, Clock* cpu_clock,
-        int max_overall_mem, int mem_per_frame, size_t min_mem_per_proc, size_t max_mem_per_proc );
+        int mem_per_frame, size_t min_mem_per_proc, size_t max_mem_per_proc );
 
     /**
      * Adds a new process to the manager and schedules it.

@@ -401,14 +401,12 @@ void Scheduler::logActiveThreads(int core_id, std::shared_ptr<Process> current_p
     << "." << std::setfill('0') << std::setw(3) << ms.count() << " ";
   debug_file << "Core ID: " << core_id << ", Active Threads: " << active_threads << ", ";
 
-  if (current_process)
-  {
+  if (current_process) {
     // Log the current process details.
-    debug_file << "Current Process: " << current_process->getPID() << "(" 
+    debug_file << "Current Process: " << current_process->getName() << "(" 
       << current_process->getCommandCounter() << "/" << current_process->getLinesOfCode() << "), ";
   }
-  else
-  {
+  else {
     debug_file << "Current Process: None, ";
   }
 

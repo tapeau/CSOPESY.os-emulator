@@ -3,7 +3,7 @@
 // Constructor for ProcessManager initializes the scheduler and starts its thread.
 ProcessManager::ProcessManager( int min_instructions, int max_instructions, int cpu_count, 
     std::string scheduler_algorithm, int delays_per_execution, int quantum_cycle, Clock* cpu_clock,
-    int max_overall_mem, int mem_per_frame, size_t min_mem_per_proc, size_t max_mem_per_proc )
+    int mem_per_frame, size_t min_mem_per_proc, size_t max_mem_per_proc )
 {
     // Store the min and max instructions for each process.
     this->min_instructions = min_instructions;
