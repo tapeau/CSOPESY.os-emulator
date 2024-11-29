@@ -60,6 +60,9 @@ public:
     Process(size_t process_id, const std::string &process_name, const std::string &creation_time, 
             int core_id, int min_instructions, int max_instructions, size_t min_mem, size_t max_mem);
 
+    Process( size_t pid, const std::string &process_name, const std::string &creation_time, 
+        size_t command_counter, size_t instructions, size_t memory_required );
+
     /**
      * @brief Executes the next command in the process’s command list.
      */
@@ -140,6 +143,7 @@ public:
     void memAlloc(size_t start_loc, size_t end_loc);
     void generateMem(size_t min_mem, size_t max_mem); // generate process memory based on config file
 
+    std::string toText() const;
 private:
     size_t process_id;  // Unique identifier for the process.
     std::string process_name;  // Name of the process.
