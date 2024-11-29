@@ -174,7 +174,6 @@ void ConsoleScreen::process_smi(std::map<std::string, std::shared_ptr<Process>> 
      // Buffers to store formatted output for different process states.
     std::stringstream ready, running, finished;
     int core_usage = 0;  // Tracks the number of CPU cores currently used.
-   // int mem_usage = 0; //tracks the number of memory used
    
     // Retrieve the state of each core from CoreStateManager (singleton).
     const std::vector<bool>& core_states = CoreStateManager::getInstance().getCoreStates();
@@ -214,13 +213,11 @@ void ConsoleScreen::process_smi(std::map<std::string, std::shared_ptr<Process>> 
 
 void ConsoleScreen::vmstat(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem, Clock* clock)
 {
-    int mem_usage = 0; //tracks the number of memory used
-
     std::cout << std::setw(10) << max_mem << " K total memory\n" << std::endl;
     std::cout << std::setw(10) << MemoryManager::getInstance().getMemUsed() << " K used memory \n" << std::endl;
     std::cout << std::setw(10) << (max_mem - MemoryManager::getInstance().getMemUsed()) << " K free memory\n" << std::endl;
-    std::cout << std::setw(10) << (clock->getClock() - Scheduler::getInstance().getActive()) << " idle CPU ticks\n" << std::endl;
-    std::cout << std::setw(10) << Scheduler::getInstance().getActive() << " active CPU ticks\n" << std::endl;
+    std::cout << std::setw(10) << (clock->getClock() - clock->getActiveTicks()) << " idle CPU ticks\n" << std::endl;
+    std::cout << std::setw(10) << clock->getActiveTicks() << " active CPU ticks\n" << std::endl;
     std::cout << std::setw(10) << clock->getClock() << " total CPU ticks\n" << std::endl;
     std::cout << std::setw(10) << PagingAllocator::getInstance().getPageIn() << " pages paged in\n" << std::endl;
     std::cout << std::setw(10) << PagingAllocator::getInstance().getPageOut() << " pages paged out\n" << std::endl;

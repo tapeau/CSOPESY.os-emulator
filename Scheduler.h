@@ -26,15 +26,12 @@ class Scheduler
      * @brief Constructor that initializes the scheduler.
      */
     Scheduler();
-    
-    static Scheduler& getInstance();
+  
     /**
      * @brief Adds a process to the scheduling queue.
      * @param process Shared pointer to the process to be added.
      */
     void addProcess(std::shared_ptr<Process> process); 
-
-    int getActive();
 
     /**
      * @brief Sets the scheduling algorithm to be used.
@@ -76,9 +73,6 @@ class Scheduler
     void setClock(Clock* cpu_clock); 
 
   private:
-    // Scheduler() = default;
-    Scheduler(const Scheduler&) = delete;
-    Scheduler& operator=(const Scheduler&) = delete; 
     /**
      * @brief Main function executed by each worker thread.
      * @param core_id ID of the CPU core assigned to the thread.
@@ -116,7 +110,6 @@ class Scheduler
     std::ofstream debug_file; ///< Output stream for logging debug information.
     int ready_threads; ///< Number of threads ready to execute processes.
     Clock* cpu_clock; ///< CPU clock object to be used.
-    int active_ticks = 0;
 
     int cpu_count; ///< Total number of available CPUs.
     int delay_per_execution; ///< Execution delay per command in milliseconds.

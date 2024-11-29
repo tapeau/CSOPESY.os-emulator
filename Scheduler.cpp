@@ -11,16 +11,6 @@
 // Constructor initializes the scheduler's state and member variables.
 Scheduler::Scheduler() : is_running(false), active_threads(0), debug_file("debug.txt"), ready_threads(0), cpu_clock(nullptr) {}
 
-Scheduler& Scheduler::getInstance()
-{
-    static Scheduler instance;  // Thread-safe static initialization in C++11 and later.
-    return instance;
-}
-
-int Scheduler::getActive(){
-  return active_ticks;
-}
-
 // Add a new process to the scheduling queue.
 void Scheduler::addProcess(std::shared_ptr<Process> process)
 {
@@ -121,9 +111,7 @@ void Scheduler::run(int core_id)
 // FCFS (First-Come, First-Serve) scheduling algorithm.
 void Scheduler::scheduleFCFS()
 {
-  int cpu_active = 0;
-    
-  while (is_running) {
+  while (is_running) { 
     std::shared_ptr<Process> process;
     int assigned_core = -1; // Core to which the process will be assigned.
     {
@@ -188,8 +176,7 @@ void Scheduler::scheduleFCFS()
 
         int last_clock_value = cpu_clock->getClock();
         bool is_first_command_executed = false;
-        int cycle_counter = 0;
-        active_ticks++;
+        int cycle_counter = 0; 
 
         // Execute the process until it completes all commands.
         while (process->getCommandCounter() < process->getLinesOfCode())
@@ -209,6 +196,8 @@ void Scheduler::scheduleFCFS()
           {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
+
+          cpu_clock->incrementActiveTicks(); 
 
           // Execute the first command immediately, then apply delay for subsequent commands
           if (!is_first_command_executed || (++cycle_counter >= delay_per_execution))
@@ -254,7 +243,6 @@ void Scheduler::scheduleFCFS()
 // Round Robin (RR) scheduling algorithm.
 void Scheduler::scheduleRR(int core_id)
 {
-  int cpu_active = 0;
   while (is_running)
   {
     std::shared_ptr<Process> process;
@@ -305,7 +293,6 @@ void Scheduler::scheduleRR(int core_id)
       int last_clock_value = cpu_clock->getClock();
       bool is_first_command_executed = false;
       int cycle_counter = 0;
-      active_ticks++;
 
       // Execute the process for a time slice (quantum).
       int quantum = 0;
@@ -325,13 +312,12 @@ void Scheduler::scheduleRR(int core_id)
               return cpu_clock->getClock() > last_clock_value;
               });
           last_clock_value = cpu_clock->getClock();
-          cpu_active++;
         }
         else
         {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-
+        cpu_clock->incrementActiveTicks(); 
         // Execute the first command immediately, then apply delay for subsequent commands
         if (!is_first_command_executed || (++cycle_counter >= delay_per_execution))
         {
