@@ -1,159 +1,277 @@
 #include "PagingAllocator.h"
-#include <algorithm>
-#include <cstddef>
+#include "Process.h"
 #include <iostream>
+#include <fstream>
+#include <ctime>
+#include <limits>
+#include <cstring>
+#include <chrono>
+#include <iomanip>
 #include <memory>
-#include <mutex>
-#include <sstream>
+#include <algorithm>
 
-PagingAllocator::PagingAllocator(size_t max_mem_size, size_t mem_per_frame)
-  : max_mem_size(max_mem_size), mem_per_frame(mem_per_frame)
+/**
+ * @brief Constructor for PagingAllocator.
+ * @param maximum_size The total size of the memory pool.
+ * @param mem_per_frame The size of each memory frame.
+ */
+PagingAllocator::PagingAllocator(size_t maximum_size, size_t mem_per_frame)
+    : maximum_size(maximum_size),
+      num_frames(static_cast<size_t>(std::ceil(static_cast<double>(maximum_size) / mem_per_frame))),
+      mem_per_frame(mem_per_frame),
+      n_process(0),
+      n_paged_in(0),
+      n_paged_out(0)
 {
-  num_frame = max_mem_size / mem_per_frame;
-
-  // Init free frame list
-  // std::cout << "Initial free frames: ";
-  for (size_t i = 0; i < num_frame; ++i) {
-    free_frames.push_back(i);
-    // std::cout << free_frames[i] << " ";
-  }
+    for (size_t i = 0; i < num_frames; ++i)
+    {
+        free_frame_list.push_back(i);
+    }
 }
 
-size_t PagingAllocator::allocFrames(size_t num_frame, size_t pid)
-{
-
-  size_t frame_index = free_frames.back();
-  free_frames.pop_back();
-
-  for (size_t i = 0; i < num_frame; ++i) {
-    // std::cout << "Current Val: " << frames[frame_index + i] << " @ " << frame_index + i << "\n";
-    frames[frame_index + i] = pid;
-    // std::cout << "Assigning " << frame_index + i << " to pid: " << pid << " Updated Val: " << frames[frame_index + i] << "\n"; 
-  }
-  return frame_index;
-}
-
-void PagingAllocator::deallocFrames(size_t num_frame, size_t frame_index)
-{
-  for (size_t i = 0; i < num_frame; ++i) {
-    frames.erase(frame_index + i);
-  }
-
-  for (size_t i = 0; i < num_frame; ++i) {
-    free_frames.push_back(frame_index + i);
-  }
-}
-
+/**
+ * @brief Allocates memory for a process.
+ * @param process Shared pointer to the process requesting memory.
+ * @return Pointer to the allocated memory frame.
+ */
 void* PagingAllocator::allocate(std::shared_ptr<Process> process)
 {
-  std::lock_guard<std::mutex> lock(mem_mtx);
-  if (!process->isAllocated()) {
-    size_t process_id = process->getPID();
-    // size_t proc_frames_need = process->getMemReq() / mem_per_frame; 
-    size_t proc_frames_need = (process->getMemReq() + mem_per_frame - 1) / mem_per_frame;
-    // std::cout << process_id << ": " << "Allocating " << proc_frames_need << " in Memory\n";
-    if (proc_frames_need > free_frames.size()) {
-      // std::cerr << "Memory allocation failed. Not enough free frames.\n";
-      // std::cout << "Cannot allocate" << ": " << process->getName() << " Not enough frames.\n";
-      return nullptr;
+    std::lock_guard<std::mutex> lock(memory_mutex);
+    size_t num_frames_needed = process->getNumPages();
+    if (num_frames_needed > free_frame_list.size())
+    {
+        return nullptr;
     }
-    // DEBUGGING
-    // std::cout << "Before allocation: \n";
-    // std::cout << "Free frames (before): ";
-    // for (const auto& frame : free_frames) {
-    //   std::cout << frame << " ";
-    // }
-    // std::cout << "\n";
-    // for (const auto& frame : frames) {
-    //   std::cout << frame.first << ": " << frame.second << "\n";
-    // }
-    // Allocate frames for the process
-    size_t frame_index = allocFrames(proc_frames_need, process_id);
-    pageTot += proc_frames_need;
-    page_in += proc_frames_need;
-    process->memAlloc(0, 1); // just to signify that process is allocated
-    // DEBUGGING
-    // std::cout << "Successfully allocated " << process->getName() << " with " << proc_frames_need << " in Memory\n";
-    // std::cout << "After allocation: \n";
-    // std::cout << "Free frames (after): ";
-    // for (const auto& frame : free_frames) {
-    //   std::cout << frame << " ";
-    // }
-    // std::cout << "\n";
-    // for (const auto frame : frames) {
-    //   std::cout << frame.first << ": " << frame.second << "\n";
-    // }
-    alloc_size += process->getMemReq();
+
+    size_t frame_index = allocateFrames(num_frames_needed, process);
+    process_list[process->getPID()] = process;
+    n_process++;
     return reinterpret_cast<void*>(frame_index);
-  } 
-  return nullptr;
 }
 
-size_t PagingAllocator::getPageIn() const
-{
-  return page_in;
-}
-
-size_t PagingAllocator::getPageOut() const 
-{
-  return page_out;
-}
-
-size_t PagingAllocator::getPageTot() const 
-{
-  return pageTot;
-}
-
+/**
+ * @brief Deallocates memory associated with a process.
+ * @param process Shared pointer to the process whose memory is to be deallocated.
+ */
 void PagingAllocator::deallocate(std::shared_ptr<Process> process)
 {
-  std::scoped_lock lock{mem_mtx};
-  size_t proc_id = process->getPID();
+    std::lock_guard<std::mutex> lock(memory_mutex);
+    process_list.erase(process->getPID());
+    n_process--;
 
-    auto it = std::find_if(frames.begin(), frames.end(),
-        [proc_id](const auto& entry) { return entry.second == proc_id; });
+    auto it = std::find_if(frame_map.begin(), frame_map.end(),
+                           [process](const auto& entry)
+                           {
+                               return entry.second == process;
+                           });
 
-    // std::cout << "Deallocating " << process->getName() << " Status: " << process->hasFinished() << "\n";
-
-    while (it != frames.end()) {
-      size_t frame_index = it->first;
-      deallocFrames(1, frame_index);
-      it = std::find_if(frames.begin(), frames.end(), 
-          [proc_id](const auto& entry) { return entry.second == proc_id; });
+    while (it != frame_map.end())
+    {
+        size_t frame_index = it->first;
+        deallocateFrames(1, frame_index);
+        it = std::find_if(frame_map.begin(), frame_map.end(),
+                          [process](const auto& entry)
+                          {
+                              return entry.second == process;
+                          });
     }
-    // std::cout << "After deallocation: \n";
-    // std::cout << "Free frames (after): ";
-    // for (const auto& frame : free_frames) {
-    //   std::cout << frame << " ";
-    // }
-    // std::cout << "\n";
-    // for (const auto frame : frames) {
-    //   std::cout << frame.first << ": " << frame.second << "\n";
-    // }
-    size_t proc_frames_need = (process->getMemReq() + mem_per_frame - 1) / mem_per_frame;
-    pageTot -= proc_frames_need;
-    page_out += proc_frames_need;
-    alloc_size -= process->getMemReq();
-    process->memDealloc();
+
+    size_t total_allocated_frames = frame_map.size();
+    size_t total_free_frames = free_frame_list.size();
+
+    if (total_allocated_frames + total_free_frames != num_frames)
+    {
+        size_t missing_frames = num_frames - (total_allocated_frames + total_free_frames);
+        if (missing_frames > 0)
+        {
+            for (size_t i = 0; i < missing_frames; ++i)
+            {
+                free_frame_list.push_back(num_frames + i);
+            }
+        }
+    }
 }
 
-std::string PagingAllocator::visualizeMemory() 
+/**
+ * @brief Visualizes the current memory allocation state.
+ */
+void PagingAllocator::visualizeMemory()
 {
-  std::stringstream str_stream;
-  str_stream << "------------------------------\n";
-  str_stream  << "Memory Visualization: \n";
-  for (size_t frame_index = 0; frame_index < num_frame; ++frame_index) {
-    auto it = frames.find(frame_index);
-    if (it != frames.end()) {
-      str_stream << "Frame " << frame_index << " -> Process " << it->second << "\n";
-    } else {
-      str_stream << "Frame " << frame_index << " -> Free\n";
+    std::cout << "Memory Visualization:\n";
+
+    for (size_t frame_index = 0; frame_index < num_frames; ++frame_index)
+    {
+        auto it = frame_map.find(frame_index);
+
+        if (it != frame_map.end())
+        {
+            std::cout << "Frame " << frame_index << " -> Process " << it->second->getPID() << "\n";
+        }
+        else
+        {
+            std::cout << "Frame " << frame_index << " -> Free\n";
+        }
     }
-  }
-  str_stream << "------------------------------\n";
-  return str_stream.str();
+    std::cout << "---- End of memory visualization ----\n";
 }
 
-uint64_t PagingAllocator::getMem() const
+/**
+ * @brief Get the number of processes currently in memory.
+ * @return The number of processes currently allocated in memory.
+ */
+int PagingAllocator::getNProcess()
 {
-  return alloc_size;
+    std::lock_guard<std::mutex> lock(memory_mutex);
+    return n_process;
+}
+
+/**
+ * @brief Get a list of all processes currently allocated in memory.
+ * @return A map of starting memory indices to process pointers.
+ */
+std::map<size_t, std::shared_ptr<Process>> PagingAllocator::getProcessList()
+{
+    std::lock_guard<std::mutex> lock(memory_mutex);
+    return process_list;
+}
+
+/**
+ * @brief Get the maximum memory capacity managed by the allocator.
+ * @return The maximum memory size.
+ */
+size_t PagingAllocator::getMaxMemory()
+{
+    std::lock_guard<std::mutex> lock(memory_mutex);
+    return maximum_size;
+}
+
+/**
+ * @brief Get the amount of external fragmentation in memory.
+ * @return The size of external fragmentation.
+ */
+size_t PagingAllocator::getExternalFragmentation()
+{
+    std::lock_guard<std::mutex> lock(memory_mutex);
+    return free_frame_list.size() * mem_per_frame;
+}
+
+/**
+ * @brief Deallocate the oldest process in memory.
+ * @param mem_size The size of memory to free.
+ */
+void PagingAllocator::deallocateOldest(size_t mem_size)
+{
+    std::chrono::time_point<std::chrono::system_clock> oldest_time = std::chrono::time_point<std::chrono::system_clock>::max();
+    size_t oldest_index = 0;
+    std::shared_ptr<Process> oldest_process = nullptr;
+
+    for (const auto& pair : process_list)
+    {
+        size_t index = pair.first;
+        std::shared_ptr<Process> process = pair.second;
+
+        auto alloc_time = process->getAllocTime();
+        if (alloc_time < oldest_time)
+        {
+            oldest_time = alloc_time;
+            oldest_index = index;
+            oldest_process = process;
+        }
+    }
+
+    if (oldest_process)
+    {
+        while (oldest_process->getState() == Process::ProcessState::RUNNING)
+        {
+            // Wait until the process is no longer running.
+        }
+
+        std::ofstream backing_store("backingstore.txt", std::ios::app);
+
+        if (backing_store.is_open())
+        {
+            std::time_t alloc_time_t = std::chrono::system_clock::to_time_t(oldest_process->getAllocTime());
+            std::tm alloc_time_tm;
+
+            if (localtime_s(&alloc_time_tm, &alloc_time_t) == 0)
+            {
+                backing_store << "Process ID: " << oldest_process->getPID();
+                backing_store << "  Name: " << oldest_process->getName();
+                backing_store << "  Command Counter: " << oldest_process->getCommandCounter()
+                              << "/" << oldest_process->getLinesOfCode() << "\n";
+                backing_store << "Memory Size: " << oldest_process->getMemoryRequired() << " KB\n";
+                backing_store << "Num Pages: " << oldest_process->getNumPages() << "\n";
+                backing_store << "============================================================================\n";
+
+                backing_store.close();
+            }
+            else
+            {
+                std::cerr << "Failed to convert time to local time format." << std::endl;
+            }
+        }
+
+        if (oldest_process->getState() != Process::ProcessState::FINISHED)
+        {
+            deallocate(oldest_process);
+            oldest_process->setMemory(nullptr);
+        }
+    }
+}
+
+/**
+ * @brief Allocate frames for a given process.
+ * @param num_frames Number of frames to allocate.
+ * @param process Shared pointer to the process requesting frames.
+ * @return The index of the first allocated frame.
+ */
+size_t PagingAllocator::allocateFrames(size_t num_frames, std::shared_ptr<Process> process)
+{
+    size_t frame_index = free_frame_list.back();
+    for (size_t i = 0; i < num_frames; ++i)
+    {
+        free_frame_list.pop_back();
+        frame_map[frame_index + i] = process;
+        n_paged_in++;
+    }
+    return frame_index;
+}
+
+/**
+ * @brief Deallocate frames starting at a given index.
+ * @param num_frames Number of frames to deallocate.
+ * @param frame_index Starting frame index.
+ */
+void PagingAllocator::deallocateFrames(size_t num_frames, size_t frame_index)
+{
+    for (size_t i = 0; i < num_frames; ++i)
+    {
+        frame_map.erase(frame_index + i);
+        n_paged_out++;
+    }
+
+    for (size_t i = 0; i < num_frames; ++i)
+    {
+        free_frame_list.push_back(frame_index + i);
+    }
+}
+
+/**
+ * @brief Get the number of page-ins that have occurred.
+ * @return The number of page-ins.
+ */
+size_t PagingAllocator::getPageIn()
+{
+    std::lock_guard<std::mutex> lock(memory_mutex);
+    return n_paged_in;
+}
+
+/**
+ * @brief Get the number of page-outs that have occurred.
+ * @return The number of page-outs.
+ */
+size_t PagingAllocator::getPageOut()
+{
+    std::lock_guard<std::mutex> lock(memory_mutex);
+    return n_paged_out;
 }

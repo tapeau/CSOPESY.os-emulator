@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CLOCK_H
+#define CLOCK_H
 
 #include <atomic>
 #include <condition_variable>
@@ -6,46 +7,67 @@
 #include <thread>
 #include <mutex>
 
-// Clock class that simulates a CPU clock incrementing in a separate thread.
+/**
+ * @class Clock
+ * @brief Manages a simulated CPU clock, including tracking active CPUs and providing clock cycle updates.
+ */
 class Clock
 {
 public:
-    Clock();                        // Constructor to initialize the clock to zero
-    int getClock();                 // Retrieves the current clock value
-    void startClock();              // Starts the clock's counting thread
-    void stopClock();               // Stops the clock's counting thread
+    Clock();
 
-    int getActiveTicks() const { return active_ticks.load(); } 
-    // int getTicks() const { return total_ticks; } 
+    /**
+     * @brief Get the current CPU clock value.
+     * @return The current value of the CPU clock.
+     */
+    int getCpuClock();
 
-    // Provides access to the clock's condition variable for synchronization
+    /**
+     * @brief Start the CPU clock in a separate thread.
+     */
+    void startCpuClock();
+
+    /**
+     * @brief Stop the CPU clock.
+     */
+    void stopCpuClock();
+
+    /**
+     * @brief Get the number of active CPUs.
+     * @return The current number of active CPUs.
+     */
+    std::atomic<int> getActiveCpuNum();
+
+    /**
+     * @brief Increment the count of active CPUs.
+     */
+    void incrementActiveCpuNum();
+
+    /**
+     * @brief Accessor to use the condition variable externally.
+     * @return Reference to the condition variable.
+     */
     std::condition_variable& getCondition() 
     { 
         return cycle_condition; 
     }
 
-    // Provides access to the clock's mutex for synchronization
+    /**
+     * @brief Accessor to use the mutex externally.
+     * @return Reference to the mutex.
+     */
     std::mutex& getMutex() 
     { 
         return clock_mutex; 
     }
 
-    void incrementActiveTicks() 
-    {
-        active_ticks++;  // Increment active total_ticks
-    }
-
-    // void incrementTicks() 
-    // {
-    //     total_ticks++;  // Increment idle ticks
-    // }
-
 private:
-    std::atomic_size_t active_ticks = 0;
-    // std::atomic_size_t total_ticks = 0;
-    std::atomic<int> cpu_clock;     // Atomic integer to store the current clock cycle count
-    bool is_running = false;        // Boolean flag to control the clock thread
-    std::thread clock_thread;       // Thread to run the clock incrementing process
-    std::condition_variable cycle_condition; // Condition variable to notify cycle updates
-    std::mutex clock_mutex;         // Mutex to protect clock updates
+    std::atomic<int> cpu_clock;           ///< The simulated CPU clock counter.
+    bool is_running = false;              ///< Flag to indicate whether the clock is running.
+    std::thread cpu_clock_thread;         ///< Thread to simulate the CPU clock.
+    std::condition_variable cycle_condition; ///< Condition variable to notify on each clock tick.
+    std::mutex clock_mutex;               ///< Mutex to protect access to the clock.
+    std::atomic<int> active_num;          ///< Number of active CPUs.
 };
+
+#endif

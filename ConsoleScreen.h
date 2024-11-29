@@ -1,4 +1,7 @@
-#pragma once
+#ifndef CONSOLE_SCREEN_H
+#define CONSOLE_SCREEN_H
+
+#include "Process.h"
 
 #include <map>
 #include <memory>
@@ -7,41 +10,54 @@
 #include <sstream>
 #include <iostream>
 #include <mutex>
-#include "Process.h"
-#include "Clock.h"
 
-// The ConsoleScreen class manages the console display of processes and user interactions.
+/**
+ * @class ConsoleScreen
+ * @brief Manages the display of process information on the console.
+ */
 class ConsoleScreen
 {
 public:
-    // Mutex object for storing process list
-    std::mutex process_list_mutex;
+    /**
+     * @brief Displays the header information on the console.
+     */
+    void displayHeader();
 
-    // Mutex object for storing core states
-    std::mutex core_states_mutex;
-    
-    // Displays the header information on the console.
-    void printHeader();
+    /**
+     * @brief Displays all processes in the provided map.
+     * @param process_list Map of process names to process objects.
+     * @param num_cpu Number of CPU cores.
+     */
+    void displayAllProcess(std::map<std::string, std::shared_ptr<Process>> process_list, int num_cpu);
 
-    // Displays the header information on the console using Windows.h for colors.
-    void printHeaderUsingHandle() const;
+    /**
+     * @brief Displays updated information of a process.
+     * @param process Shared pointer to the process to be updated.
+     */
+    void displayUpdatedProcess(std::shared_ptr<Process> process);
 
-    // Displays all processes in the given map.
-    void showAllProcesses(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count);
+    /**
+     * @brief Displays a specific process.
+     * @param process Shared pointer to the process to be displayed.
+     */
+    void displayScreen(std::shared_ptr<Process> process);
 
-    // Displays updated information for a specific process.
-    void showProcessUpdated(std::shared_ptr<Process> process);
+    /**
+     * @brief Displays all processes and writes the information to an output stream.
+     * @param process_list Map of process names to process objects.
+     * @param num_cpu Number of CPU cores.
+     * @param out Output stream where the data is to be written.
+     */
+    void displayAllProcessToStream(std::map<std::string, std::shared_ptr<Process>> process_list, int num_cpu, std::ostream& out);
 
-    // Displays a specific process and allows user interaction.
-    void showScreen(std::shared_ptr<Process> process);
-
-    // Streams all processes to a given output stream.
-    void streamAllProcesses(std::map<std::string, std::shared_ptr<Process>> process_list, int num_core, std::ostream& out);
-
-    void process_smi(std::map<std::string, std::shared_ptr<Process>> process_list, int num_core, int max_mem);
-
-    void vmstat(std::map<std::string, std::shared_ptr<Process>> process_list, int cpu_count, int max_mem, Clock* clock);
-
-    // Retrieves the current timestamp.
+    /**
+     * @brief Gets the current timestamp.
+     * @return Current timestamp as a string.
+     */
     std::string getCurrentTimestamp();
+
+    std::mutex process_list_mutex; ///< Mutex for managing access to process list.
+    std::mutex core_states_mutex;  ///< Mutex for managing access to core states.
 };
+
+#endif

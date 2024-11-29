@@ -1,5 +1,8 @@
-#pragma once
+#ifndef SCHEDULER_H
+#define SCHEDULER_H
 
+#include "Clock.h"
+#include "FlatMemoryAllocator.h"
 #include <queue>
 #include <thread>
 #include <mutex>
@@ -8,123 +11,97 @@
 #include <memory>
 #include <fstream>
 #include <string>
-#include "FlatMemoryAllocator.h"
-#include "IMemoryAllocator.h"
-#include "Clock.h"
+#include <map>
+#include <tuple>
 
-// Forward declaration of the Process class.
-class Process; 
+// Forward declaration of Process class
+class Process;
 
 /**
  * @class Scheduler
- * @brief Manages the scheduling and execution of processes.
+ * @brief Handles the scheduling of processes across multiple CPU cores.
+ *
+ * This class implements various scheduling algorithms such as First Come First Serve (FCFS)
+ * and Round Robin (RR) to manage processes and allocate them to CPU cores. It also handles
+ * memory logging and state management for processes.
  */
 class Scheduler
 {
-  public:
+public:
     /**
-     * @brief Constructor that initializes the scheduler.
+     * @brief Constructor for Scheduler.
+     * @param scheduler_algo The scheduling algorithm to be used (e.g., FCFS, RR).
+     * @param delays_per_exec The delay per execution cycle.
+     * @param n_cpu Number of CPU cores.
+     * @param quantum_cycle Quantum cycle for RR scheduling.
+     * @param cpu_clock Pointer to the CPU clock.
+     * @param memory_allocator Pointer to the memory allocator.
      */
-    Scheduler();
-  
+    Scheduler(std::string scheduler_algo, int delays_per_exec, int n_cpu, int quantum_cycle, Clock* cpu_clock, IMemoryAllocator* memory_allocator);
+
     /**
-     * @brief Adds a process to the scheduling queue.
+     * @brief Adds a new process to the scheduler.
      * @param process Shared pointer to the process to be added.
      */
-    void addProcess(std::shared_ptr<Process> process); 
+    void addProcess(std::shared_ptr<Process> process);
+
+    void setAlgorithm(const std::string& algorithm);
+    void setNumCPUs(int num);
+    void setDelays(int delay);
+    void setQuantumCycle(int quantum_cycle);
+    void start();
+    void stop();
+    void setCPUClock(Clock* cpu_clock);
+
+private:
+    /**
+     * @brief Main run method for the scheduler.
+     * @param core_id The core ID where the process will run.
+     */
+    void run(int core_id);
 
     /**
-     * @brief Sets the scheduling algorithm to be used.
-     * @param algorithm Name of the scheduling algorithm.
+     * @brief Implements First Come First Serve (FCFS) scheduling.
+     * @param core_id The core ID where the process will run.
      */
-    void setAlgorithm(const std::string& algorithm); 
+    void scheduleFCFS(int core_id);
 
     /**
-     * @brief Sets the number of available CPUs for scheduling.
-     * @param num Number of CPUs.
+     * @brief Implements Round Robin (RR) scheduling.
+     * @param core_id The core ID where the process will run.
      */
-    void setNumCPUs(int num); 
+    void scheduleRR(int core_id);
 
     /**
-     * @brief Configures the delay for each command execution.
-     * @param delay Delay per command in milliseconds.
+     * @brief Logs the current memory state for diagnostics.
+     * @param cycle The cycle number for which the memory is being logged.
      */
-    void setDelays(int delay); 
+    void logMemoryState(int cycle);
 
     /**
-     * @brief Configures the quantum cycle for Round Robin scheduling.
-     * @param quantum_cycle Time slice for Round Robin in milliseconds.
+     * @brief Starts a memory logging thread that tracks memory state periodically.
      */
-    void setQuantumCycle(int quantum_cycle); 
+    void startMemoryLog();
 
-    /**
-     * @brief Starts the scheduler and initiates process execution.
-     */
-    void start(); 
-
-    /**
-     * @brief Stops the scheduler and terminates all running processes.
-     */
-    void stop(); 
-
-    /**
-     * @brief Sets the CPU clock object.
-     */
-    void setClock(Clock* cpu_clock); 
-
-  private:
-    /**
-     * @brief Main function executed by each worker thread.
-     * @param core_id ID of the CPU core assigned to the thread.
-     */
-    void run(int core_id); 
-
-    /**
-     * @brief Executes processes using First-Come, First-Serve (FCFS) scheduling.
-     */
-    void scheduleFCFS(); 
-
-    /**
-     * @brief Executes processes using Round Robin (RR) scheduling.
-     * @param core_id ID of the CPU core assigned to the thread.
-     */
-    void scheduleRR(int core_id); 
-
-    /**
-     * @brief Logs the active threads and their associated processes to a debug file.
-     * @param core_id ID of the CPU core assigned to the thread.
-     * @param current_process Shared pointer to the currently executing process.
-     */
-    void logActiveThreads(int core_id, std::shared_ptr<Process> current_process); 
-
-    /*
-     * Memory related declaration
-     */
-    // IMemoryAllocator& mem_alloc;
-
-
-    // reordered variable declaration according to Constructor to prevent 
-    // -Wreorder error when compiling with cc -Wextra flags
-    bool is_running; ///< Indicates whether the scheduler is currently running.
-    int active_threads; ///< Number of threads currently executing processes.
-    std::ofstream debug_file; ///< Output stream for logging debug information.
-    int ready_threads; ///< Number of threads ready to execute processes.
-    Clock* cpu_clock; ///< CPU clock object to be used.
-
-    int cpu_count; ///< Total number of available CPUs.
-    int delay_per_execution; ///< Execution delay per command in milliseconds.
-    int quantum_cycle; ///< Time slice for Round Robin scheduling in milliseconds.
-    std::string scheduler_algorithm; ///< Name of the selected scheduling algorithm.
-
-    std::deque<std::shared_ptr<Process>> process_queue; ///< Queue holding the processes to be executed.
-    std::vector<std::thread> worker_threads; ///< Collection of worker threads.
-
-    std::mutex queue_mutex; ///< Mutex for synchronizing access to the process queue.
-    std::mutex active_threads_mutex; ///< Mutex for synchronizing the active thread count.
-    std::condition_variable queue_condition; ///< Condition variable for process queue updates.
-
-    std::mutex fcfs_mutex;
-    std::mutex rr_mutex;
-    std::mutex start_mutex; ///< Mutex for synchronizing thread startup.
-    std::condition_variable start_condition; ///< Condition variable to signal thread startup.
+    bool memory_log_ = false;        ///< Flag to indicate if memory logging is enabled.
+    bool is_running;                   ///< Flag to indicate if the scheduler is running.
+    int active_threads_;             ///< Number of active worker threads.
+    int cpu_count;                      ///< Number of CPU cores.
+    int delay_per_execution;             ///< Delay per execution cycle.
+    int quantum_cycle;              ///< Quantum cycle for RR scheduling.
+    int ready_threads;              ///< Number of threads ready for execution.
+    std::string scheduler_algorithm;     ///< The algorithm used for scheduling.
+    std::queue<std::shared_ptr<Process>> process_queue_; ///< Queue of processes to be scheduled.
+    std::vector<std::thread> worker_threads_; ///< List of worker threads for executing processes.
+    std::mutex queue_mutex_;         ///< Mutex for protecting access to the process queue.
+    std::mutex active_threads_mutex_;///< Mutex for protecting active thread count.
+    std::condition_variable queue_condition_; ///< Condition variable for process queue.
+    std::mutex start_mutex_;         ///< Mutex for synchronizing the start of threads.
+    std::mutex log_mutex_;           ///< Mutex for synchronizing logging activities.
+    std::condition_variable start_condition_; ///< Condition variable to start worker threads.
+    Clock* cpu_clock;            ///< Pointer to the CPU clock.
+    IMemoryAllocator* memory_allocator_; ///< Pointer to the memory allocator.
+    std::thread memory_logging_thread_; ///< Thread for logging memory usage.
 };
+
+#endif

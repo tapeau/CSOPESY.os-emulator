@@ -1,34 +1,68 @@
+#ifndef PAGING_ALLOCATOR_H
+#define PAGING_ALLOCATOR_H
+
 #include "IMemoryAllocator.h"
-#include <cstddef>
-#include <memory>
-#include <unordered_map>
+#include <vector>
+#include <iostream>
+#include <mutex>
+#include <map>
+
+/**
+ * @class PagingAllocator
+ * @brief Implements a paging memory allocation strategy.
+ *
+ * This class manages memory allocation using a paging system, dividing memory into fixed-size frames.
+ */
 class PagingAllocator : public IMemoryAllocator
 {
-  public:
-    PagingAllocator(size_t max_mem_size, size_t mem_per_frame);
+public:
+    /**
+     * @brief Constructor for PagingAllocator.
+     * @param maximum_size The total size of the memory pool.
+     * @param mem_per_frame The size of each memory frame.
+     */
+    PagingAllocator(size_t maximum_size, size_t mem_per_frame);
 
     void* allocate(std::shared_ptr<Process> process) override;
     void deallocate(std::shared_ptr<Process> process) override;
-    std::string visualizeMemory() override;
+    void visualizeMemory() override;
+    int getNProcess() override;
+    std::map<size_t, std::shared_ptr<Process>> getProcessList() override;
+    size_t getMaxMemory() override;
+    size_t getExternalFragmentation() override;
+    void deallocateOldest(size_t mem_size) override;
+    size_t getPageIn() override;
+    size_t getPageOut() override;
 
-    size_t getPageOut() const override;
-    size_t getPageTot() const override;
-    size_t getPageIn() const override;
-    uint64_t getMem() const override;
-    
-  private:
-    uint64_t alloc_size = 0;
-    size_t page_in = 0;
-    size_t page_out = 0;
-    size_t pageTot = 0;
-    size_t max_mem_size;
-    size_t num_frame;
-    std::unordered_map<size_t, size_t> frames;
-    std::vector<size_t> free_frames;
-    size_t mem_per_frame; // since memory per process is pre-determined
-    std::mutex mem_mtx;
+private:
+    size_t maximum_size;          ///< Total size of the memory pool.
+    size_t num_frames;            ///< Total number of frames.
+    std::unordered_map<size_t, std::shared_ptr<Process>> frame_map; ///< Mapping from frame indices to processes.
+    std::vector<size_t> free_frame_list; ///< List of free frames.
+    size_t n_paged_in;            ///< Number of times a page has been paged in.
+    size_t n_paged_out;           ///< Number of times a page has been paged out.
 
-    size_t allocFrames(size_t num_frame, size_t pid);
-    void deallocFrames(size_t num_frame, size_t frame_index);
-    
+    size_t mem_per_frame;         ///< Memory per frame.
+    size_t allocated_size;        ///< Currently allocated memory size.
+    int n_process;                ///< Number of processes.
+
+    std::mutex memory_mutex;      ///< Mutex for thread-safe memory operations.
+    std::map<size_t, std::shared_ptr<Process>> process_list; ///< Map of process list with starting memory index.
+
+    /**
+     * @brief Allocate a specified number of frames to a process.
+     * @param num_frames Number of frames to allocate.
+     * @param process Shared pointer to the process requesting frames.
+     * @return The index of the first allocated frame.
+     */
+    size_t allocateFrames(size_t num_frames, std::shared_ptr<Process> process);
+
+    /**
+     * @brief Deallocate a specified number of frames starting at a frame index.
+     * @param num_frames Number of frames to deallocate.
+     * @param frame_index Starting frame index.
+     */
+    void deallocateFrames(size_t num_frames, size_t frame_index);
 };
+
+#endif

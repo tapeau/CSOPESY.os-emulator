@@ -1,87 +1,92 @@
-#include <iostream>
 #include "CoreStateManager.h"
+#include <iostream> // For error logging
 
-// NOTE: Core IDs must start from 1.
+// This Class requires that core IDs start at 1
 
-// **Singleton instance retrieval** 
-// This function ensures that only one instance of `CoreStateManager` exists throughout the program.
+/**
+ * @brief Get the singleton instance of CoreStateManager.
+ * @return Reference to the singleton CoreStateManager instance.
+ */
 CoreStateManager& CoreStateManager::getInstance()
 {
-    static CoreStateManager instance;  // Thread-safe static initialization in C++11 and later.
+    static CoreStateManager instance;
     return instance;
 }
 
-// **Flip the state of a specific core**
-// Params:
-//  - core_id: The ID of the core (1-based index).
-//
-// Adjusts for the 1-based core ID by converting it to a 0-based index before accessing the state vector.
-// If the core_id is out of range, an error message is printed.
-void CoreStateManager::flipCoreState(int core_id, std::string process_name)
+/**
+ * @brief Set the state of a specific core.
+ * @param core_id The ID of the core to set (1-based index).
+ * @param state The new state for the core (true = busy, false = idle).
+ * @param process_name The name of the process assigned to the core.
+ */
+void CoreStateManager::setCoreState(int core_id, bool state, std::string process_name)
 {
-    std::lock_guard<std::mutex> lock(mutex);  // Ensure thread-safe access.
+    std::lock_guard<std::mutex> lock(core_states_mutex);
 
-    core_id--;  // Convert 1-based core_id to 0-based index.
+    // Adjust for core ID starting at 1
+    core_id--;
 
     if (core_id >= 0 && core_id < core_states.size())
     {
-        core_states[core_id] = !core_states[core_id];  // Update the core state.
-        processes[core_id] = process_name;
+        core_states[core_id] = state;
+        process_names[core_id] = process_name;
     }
     else
     {
-        std::cerr << "Core ID " << (core_id + 1) << " is out of range." << std::endl;
+        std::cerr << "Error: Core ID " << (core_id + 1) << " is out of range!" << std::endl;
     }
 }
 
-// **Retrieve the state of a specific core**
-// Params:
-//  - core_id: The ID of the core (1-based index).
-// Returns:
-//  - True if the core is busy, False if idle.
-//  - If core_id is out of range, it returns False by default and prints an error.
+/**
+ * @brief Get the state of an individual core.
+ * @param core_id The ID of the core (1-based index).
+ * @return True if the core is busy, false if it is idle.
+ */
 bool CoreStateManager::getCoreState(int core_id)
 {
-    std::lock_guard<std::mutex> lock(mutex);  // Ensure thread-safe access.
+    std::lock_guard<std::mutex> lock(core_states_mutex);
 
-    core_id--;  // Convert 1-based core_id to 0-based index.
+    // Adjust for core ID starting at 1
+    core_id--;
 
     if (core_id >= 0 && core_id < core_states.size())
     {
-        return core_states[core_id];  // Return the current state.
+        return core_states[core_id];
     }
     else
     {
-        std::cerr << "Core ID " << (core_id + 1) << " is out of range." << std::endl;
-        return false;  // Return false if core_id is invalid.
+        std::cerr << "Error: Core ID " << (core_id + 1) << " is out of range!" << std::endl;
+        return false; // Default return for invalid core_id
     }
 }
 
-// **Get the states of all cores at once**
-// Returns:
-//  - A const reference to the vector containing the states of all cores (true = busy, false = idle).
+/**
+ * @brief Get the list of processes assigned to each core.
+ * @return A constant reference to a vector containing the names of processes on each core.
+ */
+const std::vector<std::string>& CoreStateManager::getProcess() const
+{
+    std::lock_guard<std::mutex> lock(core_states_mutex);
+    return process_names;
+}
+
+/**
+ * @brief Get the state of all cores.
+ * @return A constant reference to a vector containing the states of all cores.
+ */
 const std::vector<bool>& CoreStateManager::getCoreStates() const
 {
-    std::lock_guard<std::mutex> lock(mutex);
-    return core_states;  // No need to lock, as we return a const reference.
+    std::lock_guard<std::mutex> lock(core_states_mutex);
+    return core_states;
 }
 
-// **Retrieve the processes of the manager**
-// Returns:
-//  - A const reference to the vector containing the names of all processes in the manager.
-const std::vector<std::string>& CoreStateManager::getProcesses() const
+/**
+ * @brief Initialize the cores by setting all cores to idle (false).
+ * @param num_core Number of cores to initialize.
+ */
+void CoreStateManager::initialize(int num_core)
 {
-    std::lock_guard<std::mutex> lock(mutex);
-    return processes;
-}
-
-// **Initialize the state of all cores**
-// Params:
-//  - cpu_count: Number of cores to initialize.
-// This function resizes the internal vector to match the number of cores and sets all cores to idle (false).
-void CoreStateManager::initialize(int cpu_count)
-{
-    std::lock_guard<std::mutex> lock(mutex);  // Ensure thread-safe access.
-    core_states.resize(cpu_count, false);  // Initialize all cores to idle (false).
-    processes.resize(cpu_count, ""); // Initialize all process names in the manager to an empty string
+    std::lock_guard<std::mutex> lock(core_states_mutex);
+    core_states.resize(num_core, false);  // Initialize all cores to idle (false)
+    process_names.resize(num_core, "");   // Initialize all cores with no assigned process
 }

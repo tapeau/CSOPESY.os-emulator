@@ -1,66 +1,74 @@
-#pragma once
+#ifndef CORE_STATE_MANAGER_H
+#define CORE_STATE_MANAGER_H
 
 #include <vector>
 #include <mutex>
 #include <string>
 
-// **CoreStateManager Class** 
-// Manages the state (busy/idle) of multiple CPU cores using a Singleton pattern.
-// Core IDs are expected to start from 1.
+/**
+ * @class CoreStateManager
+ * @brief Manages the state of CPU cores in a singleton pattern.
+ *
+ * This class provides thread-safe access to the state of CPU cores, where each core
+ * can be marked as busy or idle. The class follows the Singleton pattern to ensure
+ * there is only one instance managing the core states throughout the system.
+ */
 class CoreStateManager
 {
 public:
-    // **Retrieve the Singleton instance** 
-    // Ensures that only one instance of the class is ever created.
+    /**
+     * @brief Get the singleton instance of CoreStateManager.
+     * @return Reference to the singleton CoreStateManager instance.
+     */
     static CoreStateManager& getInstance();
 
-    // **Flip the state of a specific core**
-    // Params:
-    //  - core_id: ID of the core (1-based index).
-    void flipCoreState(int core_id, std::string process_name);
+    /**
+     * @brief Set the state of a specific core.
+     * @param core_id The ID of the core to set.
+     * @param state The new state for the core (true = busy, false = idle).
+     * @param process_name The name of the process assigned to the core.
+     */
+    void setCoreState(int core_id, bool state, std::string process_name);
 
-    // **Get the state of an individual core**
-    // Params:
-    //  - core_id: ID of the core (1-based index).
-    // Returns:
-    //  - True if the core is busy, False if idle.
-    //  - Prints an error if the core ID is out of range.
+    /**
+     * @brief Get the state of an individual core.
+     * @param core_id The ID of the core.
+     * @return True if the core is busy, false if it is idle.
+     */
     bool getCoreState(int core_id);
 
-    // **Retrieve the states of all cores**
-    // Returns:
-    //  - A const reference to the vector containing the state of all cores (true = busy, false = idle).
+    /**
+     * @brief Get the state of all cores.
+     * @return A constant reference to a vector containing the states of all cores.
+     */
     const std::vector<bool>& getCoreStates() const;
 
-    // **Retrieve the processes of the manager**
-    // Returns:
-    //  - A const reference to the vector containing the names of all processes in the manager.
-    const std::vector<std::string>& getProcesses() const;
+    /**
+     * @brief Initialize the cores by setting all to idle.
+     * @param num_core Number of cores to initialize.
+     */
+    void initialize(int num_core);
 
-    // **Initialize all cores to idle (false)**
-    // Params:
-    //  - num_cores: Number of cores to manage.
-    // Resizes the internal vector and sets the state of all cores to idle.
-    void initialize(int num_cores);
+    /**
+     * @brief Get the list of processes assigned to each core.
+     * @return A constant reference to a vector containing the names of processes on each core.
+     */
+    const std::vector<std::string>& getProcess() const;
 
 private:
-    // **Private constructor** 
-    // Ensures that instances can only be created through `getInstance()`.
+    /**
+     * @brief Private constructor for singleton pattern.
+     */
     CoreStateManager() = default;
 
-    // **Delete copy constructor and assignment operator**
-    // Prevents copying or assigning the Singleton instance.
+    // Disable copy constructor and assignment operator to enforce Singleton pattern.
     CoreStateManager(const CoreStateManager&) = delete;
     CoreStateManager& operator=(const CoreStateManager&) = delete;
 
-    // **Vector to store the state of each core** 
-    // true = busy, false = idle.
-    std::vector<bool> core_states;
+    std::vector<bool> core_states;              ///< Vector to store the state of each core (true = busy, false = idle).
+    std::vector<std::string> process_names;     ///< Vector to store the process assigned to each core.
 
-    // **Vector to store the names of each processes in the manager**
-    std::vector<std::string> processes;
-
-    // **Mutex to ensure thread-safe access to core states** 
-    // Marked `mutable` to allow modification in const methods.
-    mutable std::mutex mutex;
+    mutable std::mutex core_states_mutex;       ///< Mutex for thread-safe access to core states.
 };
+
+#endif

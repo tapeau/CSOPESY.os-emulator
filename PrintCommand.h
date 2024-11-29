@@ -1,60 +1,81 @@
-#pragma once
+#ifndef PRINT_COMMAND_H
+#define PRINT_COMMAND_H
 
-#include <ctime>     
-#include <string>    
-#include <fstream>   
-#include <iomanip>   
-#include <sstream>   
-#include <chrono>    
 #include "ICommand.h"
 
-// PrintCommand class that implements the ICommand interface.
-// This class represents a print operation that writes text to a file.
+#include <ctime>
+#include <string>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
+#include <chrono>
+
+/**
+ * @class PrintCommand
+ * @brief Implements a print command that outputs specified text along with process information to a file.
+ *
+ * This class is derived from ICommand and represents a specific type of command that logs messages
+ * to a file with a timestamp and core ID.
+ */
 class PrintCommand : public ICommand
 {
 public:
     /**
-     * Constructor to initialize the PrintCommand object.
-     * 
-     * @param process_id     - Unique identifier for the process.
-     * @param core_id        - Identifier of the core assigned to this process.
-     * @param text_to_print  - The text that will be written to the output file.
-     * @param process_name   - Name of the process (used as the output file name).
+     * @brief Constructor for PrintCommand.
+     * @param pid The process ID associated with this command.
+     * @param core The core ID on which the command is executed.
+     * @param to_print The message to print.
+     * @param name The name of the output file.
      */
-    PrintCommand(int process_id, int core_id, const std::string &text_to_print, const std::string &process_name)
-        : ICommand(process_id, CommandType::PRINT),  // Initialize the base class.
-          core_id(core_id), 
-          text_to_print(text_to_print), 
-          process_name(process_name) 
-    {}
+    PrintCommand(int pid, int core, const std::string& to_print, const std::string& name)
+        : ICommand(pid, CommandType::PRINT), core_(core), to_print_(to_print), name_(name)
+    {
+    }
 
     /**
-     * Override the execute() function to perform the print operation.
-     * This function writes the current timestamp, core ID, and text to a file named <process_name>.txt.
+     * @brief Execute the print command.
+     *
+     * This function writes the message, core ID, and timestamp to an output file.
      */
-    void execute() override;
+    void execute() override
+    {
+        std::ofstream outfile(name_ + ".txt", std::ios::app);
+        outfile << getCurrentTimestamp() << " Core:" << core_ << " \"" << to_print_ << "\"" << std::endl;
+        outfile.close();
+    }
 
     /**
-     * Override the setCore() function to change the core ID of this process.
-     * 
-     * @param core_id - The new core ID to be set.
+     * @brief Set the core ID for the command.
+     * @param core The core ID to be set.
      */
-    void setCore(int core_id) override;
-    // {
-    //     this->core_id = core_id;  // Update the core ID with the new value.
-    // }
+    void setCore(int core) override
+    {
+        core_ = core;
+    }
 
 private:
-    // Private member variables
-    int process_id;         // Unique identifier for the process.
-    int core_id;                // The core assigned to the process.
-    std::string text_to_print;  // The text to be printed to the output file.
-    std::string process_name;   // Name of the process.
+    std::string to_print_;  ///< The message to be printed.
+    int core_;              ///< The core ID on which the command is executed.
+    std::string name_;      ///< The name of the output file.
 
     /**
-     * Helper function to get the current timestamp in a formatted string, including milliseconds.
-     * 
-     * @return A string representing the current date, time, and milliseconds.
+     * @brief Get the current timestamp.
+     * @return A string representing the current timestamp.
      */
-    std::string getCurrentTimestamp();
+    std::string getCurrentTimestamp()
+    {
+        auto now = std::chrono::system_clock::now();
+        std::time_t time_now = std::chrono::system_clock::to_time_t(now);
+        auto milliseconds = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+        std::tm local_time;
+        localtime_s(&local_time, &time_now);
+
+        std::ostringstream oss;
+        oss << std::put_time(&local_time, "(%m/%d/%Y %I:%M:%S")
+            << '.' << std::setfill('0') << std::setw(3) << milliseconds.count()
+            << std::put_time(&local_time, "%p)");
+        return oss.str();
+    }
 };
+
+#endif

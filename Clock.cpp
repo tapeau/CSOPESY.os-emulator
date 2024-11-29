@@ -1,53 +1,76 @@
 #include "Clock.h"
 
-// Constructor initializes the clock to zero
-Clock::Clock() : cpu_clock(0) {}
-
-// Retrieves the current value of the clock (in clock cycles)
-int Clock::getClock()
+/**
+ * @brief Constructor for Clock, initializes clock and active CPU count.
+ */
+Clock::Clock() : cpu_clock(0), active_num(0)
 {
-    return cpu_clock.load();  // Ensures atomic access to the clock count
 }
 
-// Starts the clock, launching a thread that increments the clock cycle count
-void Clock::startClock()
+/**
+ * @brief Get the current value of the CPU clock.
+ * @return The current value of the CPU clock as an integer.
+ */
+int Clock::getCpuClock()
 {
-    // Only start if the clock is not already running
+    return cpu_clock.load();
+}
+
+/**
+ * @brief Start the CPU clock in a separate thread. Increases the clock value every millisecond.
+ */
+void Clock::startCpuClock()
+{
     if (!is_running)
     {
-        is_running = true; // Set running flag to true
-        std::cout << "CPU Clock started." << std::endl;
-        
-        // Start the clock thread that increments the cycle count continuously
-        clock_thread = std::thread([this]()
+        is_running = true;
+        std::cout << "CPU Clock started\n";
+        cpu_clock_thread = std::thread([this]()
         {
             while (is_running)
             {
-                // Lock mutex to protect clock update
                 {
+                    // Lock the mutex to safely increment the clock value
                     std::lock_guard<std::mutex> lock(clock_mutex);
-                    ++cpu_clock;  // Increment clock count
+                    cpu_clock++;
                 }
-                
-                // Notify all waiting threads of the updated clock cycle
+
+                // Notify all waiting threads about the clock tick update
                 cycle_condition.notify_all();
 
-                // Pause for 1 millisecond to simulate a clock cycle
-                std::this_thread::sleep_for(std::chrono::microseconds(1000));
+                // Sleep for a millisecond to simulate clock ticking
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
         });
     }
 }
 
-// Stops the clock by terminating the clock thread
-void Clock::stopClock()
+/**
+ * @brief Stop the CPU clock and join the thread.
+ */
+void Clock::stopCpuClock()
 {
-    is_running = false; // Set running flag to false to stop the thread loop
-
-    // Join the thread to ensure it stops gracefully
-    if (clock_thread.joinable())
+    is_running = false;
+    if (cpu_clock_thread.joinable())
     {
-        clock_thread.join();
-        std::cout << "CPU Clock stopped." << std::endl;
+        cpu_clock_thread.join();
+        std::cout << "CPU Clock stopped\n";
     }
+}
+
+/**
+ * @brief Get the number of active CPUs.
+ * @return The current number of active CPUs as an atomic integer.
+ */
+std::atomic<int> Clock::getActiveCpuNum()
+{
+    return active_num.load();
+}
+
+/**
+ * @brief Increment the count of active CPUs.
+ */
+void Clock::incrementActiveCpuNum()
+{
+    active_num++;
 }

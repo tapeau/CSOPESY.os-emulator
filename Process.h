@@ -1,157 +1,93 @@
-#pragma once
+#ifndef PROCESS_H
+#define PROCESS_H
 
-#include <mutex>
-#include <string>
-#include <vector>
 #include "ICommand.h"
 #include "PrintCommand.h"
+
 #include <memory>
+#include <string>
+#include <vector>
+#include <ctime>
+#include <cmath>
+#include <chrono>
 
 /**
  * @class Process
- * Represents a process that executes a sequence of commands.
- * Each process is assigned a unique ID, name, creation time, and is associated with a specific CPU core.
+ * @brief Represents a process that can execute commands and manage memory.
+ *
+ * This class holds information about a process, including its ID, name, memory requirements,
+ * and command list. It provides methods for generating commands, executing commands,
+ * and managing memory.
  */
 class Process
 {
 public:
     /**
      * @struct RequirementFlags
-     * Holds information about the resource requirements of a process.
-     * - require_files: Indicates whether the process needs files.
-     * - num_files: Number of files required.
-     * - require_memory: Indicates whether memory allocation is required.
-     * - memory_required: Amount of memory required (in MB).
+     * @brief Flags that indicate resource requirements for the process.
      */
     struct RequirementFlags
     {
-        // bool require_files;
-        // int num_files;
-        bool require_memory;
-        size_t memory_required;
+        bool require_files;   ///< Indicates if the process requires files.
+        int num_files;        ///< Number of files required by the process.
+        bool require_memory;  ///< Indicates if the process requires memory.
+        int memory_required;  ///< Memory required by the process.
     };
 
     /**
      * @enum ProcessState
-     * Represents the current state of the process.
-     * - READY: Process is ready to run.
-     * - RUNNING: Process is currently executing.
-     * - WAITING: Process is waiting for some resources or event.
-     * - FINISHED: Process has completed execution.
+     * @brief Represents the current state of the process.
      */
     enum ProcessState
     {
-        READY,
-        RUNNING,
-        WAITING,
-        FINISHED
+        READY,     ///< Process is ready to execute.
+        RUNNING,   ///< Process is currently running.
+        WAITING,   ///< Process is waiting for resources.
+        FINISHED   ///< Process has finished execution.
     };
 
-    /**
-     * @brief Constructor to initialize a Process object.
-     * 
-     * @param process_id Unique identifier for the process.
-     * @param process_name Name of the process.
-     * @param creation_time Time when the process was created.
-     * @param core_id ID of the CPU core to which the process is assigned.
-     * @param min_instructions Minimum number of instructions the process will execute.
-     * @param max_instructions Maximum number of instructions the process can execute.
-     */
-    Process(int process_id, const std::string &process_name, const std::string &creation_time, 
-            int core_id, int min_instructions, int max_instructions, size_t min_mem, size_t max_mem);
+    // Constructor
+    Process(int pid, const std::string& name, const std::string& time, int core, int min_ins, int max_ins, size_t mem_per_proc, size_t mem_per_frame);
 
-    /**
-     * @brief Executes the next command in the process’s command list.
-     */
+    // Method to execute the current command
     void executeCurrentCommand();
 
-    // Getters to retrieve various properties of the process.
-
-    /**
-     * @return Current command counter (i.e., how many commands have been executed).
-     */
+    // Getters and Setters
     int getCommandCounter() const;
-
-    /**
-     * @return Total number of commands in the process.
-     */
     int getLinesOfCode() const;
-
-    /**
-     * @return The ID of the CPU core assigned to the process.
-     */
     int getCPUCoreID() const;
-
-    bool hasFinished() const;
-    /**
-     * @brief Sets the CPU core ID for the process.
-     * @param core_id New CPU core ID to assign.
-     */
-    void setCPUCoreID(int core_id);
-
-    /**
-     * @return The current state of the process (READY, RUNNING, WAITING, or FINISHED).
-     */
+    size_t getMemoryRequired() const;
+    void setCPUCoreID(int core);
     ProcessState getState() const;
-
-    /**
-     * @brief Sets the process state.
-     * @param state New state to assign (READY, RUNNING, etc.).
-     */
     void setState(ProcessState state);
-
-    /**
-     * @return The unique process ID (PID).
-     */
-    int getPID() const;
-
-    /**
-     * @return The name of the process.
-     */
+    size_t getPID() const;
     std::string getName() const;
-
-    /**
-     * @return The creation time of the process.
-     */
     std::string getTime() const;
+    void setMemory(void* memory);
+    void* getMemory() const;
+    void setAllocTime();
+    std::chrono::time_point<std::chrono::system_clock> getAllocTime() const;
+    size_t getNumPages() const;
+    void calculateFrame();
 
-    /**
-     * @brief Generates a random number of print commands for the process.
-     * 
-     * @param min_instructions Minimum number of commands to generate.
-     * @param max_instructions Maximum number of commands to generate.
-     * 
-     * This method creates `PrintCommand` objects and adds them to the command list.
-     */
-    void generatePrintCommands(int min_instructions, int max_instructions);
-
-    size_t getMemReq() const;
-
-    bool isAllocated() const;
-
-
-    /*
-     * Methods related to memory
-     * Alloc and Dealloc are being managed by the memory allocator
-     */ 
-    size_t getStartLoc() const;
-    size_t getEndLoc() const;
-    void memDealloc();
-    void memAlloc(size_t start_loc, size_t end_loc);
-    void generateMem(size_t min_mem, size_t max_mem); // generate process memory based on config file
+    // Method to generate print commands
+    void generateCommands(int min_ins, int max_ins);
 
 private:
-    int process_id;  // Unique identifier for the process.
-    std::string process_name;  // Name of the process.
-    std::string creation_time;  // Time the process was created.
-    std::vector<std::shared_ptr<ICommand>> command_list;  // List of commands the process will execute.
+    size_t pid_;                        ///< Process ID.
+    std::string name_;                  ///< Process name.
+    std::string time_;                  ///< Time the process was created.
+    std::vector<std::shared_ptr<ICommand>> command_list_; ///< List of commands for the process.
+    std::chrono::time_point<std::chrono::system_clock> allocation_time_; ///< Allocation time for memory.
 
-    size_t command_counter = 0;  // Counter for the number of executed commands.
-    int core_id;  // ID of the CPU core assigned to the process.
-    ProcessState process_state;  // Current state of the process.
-    RequirementFlags requirement_flags;  // Flags indicating the resource requirements of the process.
-
-    size_t start_loc = 0; // memory start location
-    size_t end_loc = 0;  // memory end location
-
+    size_t mem_per_proc_;               ///< Memory required per process.
+    size_t mem_per_frame_;              ///< Memory per frame.
+    size_t num_pages_;                  ///< Number of pages required.
+    int command_counter_ = 0;           ///< Command counter.
+    int cpu_core_id_;                   ///< CPU core ID assigned to the process.
+    RequirementFlags requirement_flags_; ///< Flags indicating process requirements.
+    ProcessState process_state_;        ///< Current state of the process.
+    void* memory_;                      ///< Pointer to the memory allocated to the process.
 };
+
+#endif
