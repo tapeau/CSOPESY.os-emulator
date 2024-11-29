@@ -14,14 +14,16 @@ class FlatMemoryAllocator : public IMemoryAllocator {
     ~FlatMemoryAllocator();
 
     void deallocate(std::shared_ptr<Process> process) override;
-    std::string visualizeMemory() override;
     void* allocate(std::shared_ptr<Process> process) override;
     size_t getMem() const override {
         return alloc_size;
     }
 
+    size_t getPageIn() const override;
+    size_t getPageOut() const override;
     void printMemMap() const;
 
+    std::string visualizeMemory() override;
   private:
     size_t max_size;
     size_t alloc_size; // still not sure what this is for? maybe to keep track of used mem space 

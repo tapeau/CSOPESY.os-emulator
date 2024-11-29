@@ -1,5 +1,4 @@
 #include <ctime>
-#include <filesystem>
 #include <fstream>
 #include <memory>
 #include <string>
@@ -29,9 +28,9 @@ void MemoryManager::initAllocator(size_t max_overall_mem, size_t mem_per_frame)
 }
 
  size_t MemoryManager::getMemUsed() const {
-    if (mem_allocator) {
-        return mem_allocator->getMem();
-    }
+   if (mem_allocator) {
+     return mem_allocator->getMem();
+   }
     return 0;
 }
 
@@ -50,12 +49,6 @@ void MemoryManager::setqq(int qq)
 {
   quantum_cycle = qq;
 }
-
-// void MemoryManager::setVars()
-// {
-//
-// }
-
 
 std::shared_ptr<IMemoryAllocator> MemoryManager::getAllocator()
 {

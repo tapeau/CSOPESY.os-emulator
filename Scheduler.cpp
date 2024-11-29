@@ -111,7 +111,7 @@ void Scheduler::run(int core_id)
 // FCFS (First-Come, First-Serve) scheduling algorithm.
 void Scheduler::scheduleFCFS()
 {
-  while (is_running) { 
+  while (is_running) {
     std::shared_ptr<Process> process;
     int assigned_core = -1; // Core to which the process will be assigned.
     {
@@ -122,40 +122,50 @@ void Scheduler::scheduleFCFS()
       if (!is_running) break; // Exit if the scheduler is stopped.
 
       process = process_queue.front(); // Get the first process from the queue.
+      process_queue.pop_front();   // Remove it from the queue.
+
       void* memory = MemoryManager::getInstance().getAllocator()->allocate(process); // memory returns nullptr if it cannot allocate the process in memory
       if (memory != nullptr) { // if process is successfully allocated in memory 
-                               // std::cout << "Allocated mem for process " << process->getName() << " (ID: " << process->getPID() << ")\n";
-        process_queue.pop_front();   // Remove it from the queue.
       } else {
         // std::cout <<" Insufficient memory for process " << process->getName() << "(ID: " << process->getPID() << ")\n";
         // else statment is when memory is insufficient, therefore we cannot execute the process it is put back at the ready queue
-        process_queue.pop_front();
         process_queue.push_back(process);
+        cpu_clock->incrementTicks();
       }
       // process_queue.pop_front(); // Remove it from the queue.
     }
 
-    if (process->isAllocated()) {
+    // have to add logic that the process have not been allocated to a cpu
+    if (process->isAllocated() && process->getCPUCoreID() == -1) {
       // Try to find an available core.
       for (int i = 1; i <= cpu_count; ++i)
       {
+        // have to add a lock here since implementation of cores in this program 
+        // is not entirely contained it its ownself but multiple threads that sort of 
+        // have the same resources with multiple instance of execution
+        // std::scoped_lock lock{fcfs_mutex};
         if (!CoreStateManager::getInstance().getCoreState(i)) // If the core is not in use.
         {
           assigned_core = i; // Assign this core to the process.
+          process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
+          process->setCPUCoreID(assigned_core); // Assign the core to the process.
+
+          // TODO: bug, cpu utilization is not accurate when using PagingAllocator
+          CoreStateManager::getInstance().flipCoreState(assigned_core, process->getName()); // Mark the core as in use.
           break;
         }
       }
-
+      // issue seems to be multiple cores are selecting the same process
+      // std::cout << process->getName() << " is assigned to   Core: " << assigned_core << "\n";
       // If no core is available, put the process back into the queue.
       if (assigned_core == -1)
       {
-        std::unique_lock<std::mutex> lock(queue_mutex);
-        process_queue.push_back(process);
+        std::scoped_lock lock{fcfs_mutex};
+        // process_queue.push_back(process);
         continue; // Skip to the next iteration.
       }
 
-      if (process)
-      {
+      if (process) {
         {
           std::lock_guard<std::mutex> lock(active_threads_mutex);
           active_threads++; // Increment the active thread count.
@@ -170,20 +180,17 @@ void Scheduler::scheduleFCFS()
         }
 
         logActiveThreads(assigned_core, process); // Log the active threads.
-        process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
-        process->setCPUCoreID(assigned_core); // Assign the core to the process.
-        CoreStateManager::getInstance().flipCoreState(assigned_core, process->getName()); // Mark the core as in use.
 
         int last_clock_value = cpu_clock->getClock();
         bool is_first_command_executed = false;
-        int cycle_counter = 0; 
+        int cycle_counter = 0;
 
         // Execute the process until it completes all commands.
-        while (process->getCommandCounter() < process->getLinesOfCode())
-        {
+        while (process->getCommandCounter() < process->getLinesOfCode()) {
+          // testing purposes
+          cpu_clock->incrementActiveTicks();
           MemoryManager::getInstance().writeMemInfoToFile(100);
-          if (delay_per_execution != 0)
-          {
+          if (delay_per_execution != 0) {
             // Wait for the next CPU cycle
             std::unique_lock<std::mutex> lock(cpu_clock->getMutex());
             cpu_clock->getCondition().wait(lock, [&]
@@ -192,16 +199,15 @@ void Scheduler::scheduleFCFS()
                 });
             last_clock_value = cpu_clock->getClock();
           }
-          else
-          {
+          else {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
           }
 
-          cpu_clock->incrementActiveTicks(); 
-
           // Execute the first command immediately, then apply delay for subsequent commands
-          if (!is_first_command_executed || (++cycle_counter >= delay_per_execution))
-          {
+          if (!is_first_command_executed || (++cycle_counter >= delay_per_execution)) {
+            // have to add lock here bug occurs, execution > maximum instruction if not
+            // since CPU implementation does not necessarily hold a certain process as its own
+            std::scoped_lock lock{queue_mutex};
             process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
             if (!CoreStateManager::getInstance().getCoreState(assigned_core)) // If the core is not in use.
             {
@@ -210,9 +216,7 @@ void Scheduler::scheduleFCFS()
             process->executeCurrentCommand();
             is_first_command_executed = true;
             cycle_counter = 0; // Reset cycle counter after each execution
-          }
-          else
-          {
+          } else {
             process->setState(Process::ProcessState::WAITING); // Set the process state to WAITING.
             if (CoreStateManager::getInstance().getCoreState(assigned_core)) // If the core is in use.
             {
@@ -237,14 +241,14 @@ void Scheduler::scheduleFCFS()
       std::scoped_lock lock{fcfs_mutex};
       MemoryManager::getInstance().getAllocator()->deallocate(process);
     }
+
   }
 }
 
 // Round Robin (RR) scheduling algorithm.
 void Scheduler::scheduleRR(int core_id)
 {
-  while (is_running)
-  {
+  while (is_running) {
     std::shared_ptr<Process> process;
     /*
      * Process Allocation
@@ -257,21 +261,30 @@ void Scheduler::scheduleRR(int core_id)
       if (!is_running) break; // Exit if the scheduler is stopped.
 
       process = process_queue.front(); // Get the first process from the queue.
+      process_queue.pop_front();   // Remove it from the queue.
       void* memory = MemoryManager::getInstance().getAllocator()->allocate(process); // memory returns nullptr if it cannot allocate the process in memory
+      // std::cout << "Core: " << core_id << " is allocating " << process->getName() << " in memory\n";
       if (memory != nullptr) { // if process is successfully allocated in memory 
                                // std::cout << "Allocated mem for process " << process->getName() << " (ID: " << process->getPID() << ")\n";
-        process_queue.pop_front();   // Remove it from the queue.
+        // std::cout << "Core: " << core_id << " successfully allocated " << process->getName() << "\n";
       } else {
         // std::cout <<" Insufficient memory for process " << process->getName() << "(ID: " << process->getPID() << ")\n";
         // else statment is when memory is insufficient, therefore we cannot execute the process it is put back at the ready queue
-          process_queue.pop_front();
-          process_queue.push_back(process);
+        process_queue.push_back(process);
       }
     }
-    // std::cout << "Current Process: " << process->getName() << " in_memory: " << process->isAllocated() << "\n";
 
-    if (process->isAllocated())
-    {
+    if (process->isAllocated() && process->getCPUCoreID() == -1) {
+      process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
+      process->setCPUCoreID(core_id); // Assign the current core to the process.
+      logActiveThreads(core_id, process); // Log the active threads.
+
+      if (process->getCPUCoreID() == core_id) {
+        CoreStateManager::getInstance().flipCoreState(core_id, process->getName()); // Mark the core as in use.
+      } else {
+        continue;
+      }
+
       {
         std::lock_guard<std::mutex> lock(active_threads_mutex);
         active_threads++; // Increment the active thread count.
@@ -279,16 +292,11 @@ void Scheduler::scheduleRR(int core_id)
         // Ensure the active thread count does not exceed available CPUs.
         if (active_threads > cpu_count)
         {
-          std::cerr << "CPU limit exceeded!" << std::endl;
+          // std::cerr << "CPU limit exceeded!" << std::endl;
           active_threads--;
           continue;
         }
       }
-
-      logActiveThreads(core_id, process); // Log the active threads.
-      process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
-      process->setCPUCoreID(core_id); // Assign the current core to the process.
-      CoreStateManager::getInstance().flipCoreState(core_id, process->getName()); // Mark the core as in use.
 
       int last_clock_value = cpu_clock->getClock();
       bool is_first_command_executed = false;
@@ -299,12 +307,10 @@ void Scheduler::scheduleRR(int core_id)
       /*
        * Process Execution
        */
-      while (!process->hasFinished() && quantum < quantum_cycle)
-      {
+      while (!process->hasFinished() && quantum < quantum_cycle) {
         // dumps memory info to file 
         MemoryManager::getInstance().writeMemInfoToFile(quantum);
-        if (delay_per_execution != 0)
-        {
+        if (delay_per_execution != 0) {
           // Wait for the next CPU cycle
           std::unique_lock<std::mutex> lock(cpu_clock->getMutex());
           cpu_clock->getCondition().wait(lock, [&]
@@ -313,14 +319,15 @@ void Scheduler::scheduleRR(int core_id)
               });
           last_clock_value = cpu_clock->getClock();
         }
-        else
-        {
+        else {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-        cpu_clock->incrementActiveTicks(); 
+
         // Execute the first command immediately, then apply delay for subsequent commands
-        if (!is_first_command_executed || (++cycle_counter >= delay_per_execution))
-        {
+        if (!is_first_command_executed || (++cycle_counter >= delay_per_execution)) {
+          // added mutex lock since issue arises when multiple cpus are trying to execute
+          // a single process
+          std::lock_guard<std::mutex> lock(queue_mutex);
           process->setState(Process::ProcessState::RUNNING); // Set the process state to RUNNING.
           if (!CoreStateManager::getInstance().getCoreState(core_id)) // If the core is not in use.
           {
@@ -330,9 +337,7 @@ void Scheduler::scheduleRR(int core_id)
           is_first_command_executed = true;
           cycle_counter = 0; // Reset cycle counter after each execution
           ++quantum;        // Increment quantum usage after each command execution
-        }
-        else
-        {
+        } else {
           process->setState(Process::ProcessState::WAITING); // Set the process state to WAITING.
           if (CoreStateManager::getInstance().getCoreState(core_id)) // If the core is in use.
           {
@@ -342,27 +347,25 @@ void Scheduler::scheduleRR(int core_id)
       }
 
       // If the process is not finished, put it back in the queue.
-      if (!process->hasFinished())
-      {
+      if (!process->hasFinished()) {
+        std::scoped_lock lock{queue_mutex};
         process->setState(Process::ProcessState::READY); // Set the process state to READY.
-        std::lock_guard<std::mutex> lock(queue_mutex);
         // std::cout << "Items in process_queue: ";
         // for (auto& elem : process_queue) {
         //   std::cout << elem->getName() << "\n";
         // }
         // std::cout << "Items in process_queue: ";
         // push_back to queue if it is not in the queue to prevent duplicates in process_queue (ready queue)
+        process->setCPUCoreID(-1);
         if ( (std::find(process_queue.begin(), process_queue.end(), process) == process_queue.end()) ) {
           process_queue.push_back(process);
         }
-      }
-      else
-      {
-        std::lock_guard<std::mutex> lock(queue_mutex);
+      } else {
+        std::scoped_lock lock{queue_mutex};
+        // process->setCPUCoreID(-1);
         process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
         MemoryManager::getInstance().getAllocator()->deallocate(process);
       }
-
 
       std::lock_guard<std::mutex> lock(active_threads_mutex);
       active_threads--; // Decrement the active thread count.
@@ -370,7 +373,12 @@ void Scheduler::scheduleRR(int core_id)
       logActiveThreads(core_id, nullptr); // Log the thread state after completion.
       queue_condition.notify_all(); // Notify other threads of availability.
       CoreStateManager::getInstance().flipCoreState(core_id, ""); // Mark the core as idle.
-    } 
+    } else if (process->hasFinished() && process->isAllocated()) {
+      // scuffed check for some reason memory is not deallocating in else statement above
+      // well adding this works.
+      std::scoped_lock lock{rr_mutex};
+      MemoryManager::getInstance().getAllocator()->deallocate(process);
+    }
   }
 }
 

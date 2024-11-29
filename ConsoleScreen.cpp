@@ -1,3 +1,4 @@
+#define WIN32_LEAN_AND_MEAN
 #include "ConsoleScreen.h"
 #include "CoreStateManager.h"
 #include <windows.h>
@@ -37,6 +38,7 @@ void ConsoleScreen::printHeaderUsingHandle() const
     std::cerr << "Type 'exit' to quit, 'clear' to clear the screen \n"; 
     SetConsoleTextAttribute(console_handle, 7);
 }
+
 /**
  * Displays the header information at the start of the program.
  * This includes a welcome banner and some instructions for the user.
@@ -219,8 +221,8 @@ void ConsoleScreen::vmstat(std::map<std::string, std::shared_ptr<Process>> proce
     std::cout << std::setw(10) <<  (clock->getTicks() - clock->getActiveTicks()) << " idle CPU ticks\n" << std::endl;
     std::cout << std::setw(10) << clock->getActiveTicks() << " active CPU ticks\n" << std::endl;
     std::cout << std::setw(10) << clock->getTicks() << " total CPU ticks\n" << std::endl;
-    std::cout << std::setw(10) << PagingAllocator::getInstance().getPageIn() << " pages paged in\n" << std::endl;
-    std::cout << std::setw(10) << PagingAllocator::getInstance().getPageOut() << " pages paged out\n" << std::endl;
+    std::cout << std::setw(10) << MemoryManager::getInstance().getAllocator()->getPageIn() << " pages paged in\n" << std::endl;
+    std::cout << std::setw(10) << MemoryManager::getInstance().getAllocator()->getPageOut() << " pages paged out\n" << std::endl;
 
 }
 
