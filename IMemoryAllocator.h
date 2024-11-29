@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include "Process.h"
@@ -12,5 +13,5 @@ class IMemoryAllocator {
     virtual size_t getPageIn() const = 0;
     virtual size_t getPageOut() const = 0;
     virtual size_t getPageTot() const = 0;
-    virtual size_t getMem() const = 0;
+    virtual uint64_t getMem() const = 0;
 };
