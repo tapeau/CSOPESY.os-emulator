@@ -16,7 +16,7 @@ public:
     void stopClock();               // Stops the clock's counting thread
 
     int getActiveTicks() const { return active_ticks; } 
-    int getTicks() const { return ticks; } 
+    int getTicks() const { return total_ticks; } 
 
     // Provides access to the clock's condition variable for synchronization
     std::condition_variable& getCondition() 
@@ -32,17 +32,17 @@ public:
 
     void incrementActiveTicks() 
     {
-        active_ticks++;  // Increment active ticks
+        active_ticks++;  // Increment active total_ticks
     }
 
     void incrementTicks() 
     {
-        ticks++;  // Increment idle ticks
+        total_ticks++;  // Increment idle ticks
     }
 
 private:
-    int active_ticks = 0; 
-    int ticks = 0;
+    std::atomic_size_t active_ticks = 0;
+    std::atomic_size_t total_ticks = 0;
     std::atomic<int> cpu_clock;     // Atomic integer to store the current clock cycle count
     bool is_running = false;        // Boolean flag to control the clock thread
     std::thread clock_thread;       // Thread to run the clock incrementing process

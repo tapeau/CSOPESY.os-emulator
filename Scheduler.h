@@ -124,6 +124,7 @@ class Scheduler
     std::condition_variable queue_condition; ///< Condition variable for process queue updates.
 
     std::mutex fcfs_mutex;
+    std::mutex rr_mutex;
     std::mutex start_mutex; ///< Mutex for synchronizing thread startup.
     std::condition_variable start_condition; ///< Condition variable to signal thread startup.
 };
