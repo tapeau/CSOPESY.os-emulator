@@ -169,3 +169,8 @@ size_t FlatMemoryAllocator::getPageOut() const
 {
   return 0;
 }
+
+size_t FlatMemoryAllocator::getPageTot() const
+{
+  return 0;
+}

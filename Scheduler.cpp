@@ -120,7 +120,7 @@ void Scheduler::scheduleFCFS()
       queue_condition.wait(lock, [this] { return !process_queue.empty() || !is_running; });
 
       if (!is_running) break; // Exit if the scheduler is stopped.
-
+  
       process = process_queue.front(); // Get the first process from the queue.
       process_queue.pop_front();   // Remove it from the queue.
 
@@ -130,7 +130,7 @@ void Scheduler::scheduleFCFS()
         // std::cout <<" Insufficient memory for process " << process->getName() << "(ID: " << process->getPID() << ")\n";
         // else statment is when memory is insufficient, therefore we cannot execute the process it is put back at the ready queue
         process_queue.push_back(process);
-        cpu_clock->incrementTicks();
+        // cpu_clock->incrementTicks();
       }
       // process_queue.pop_front(); // Remove it from the queue.
     }
@@ -188,7 +188,6 @@ void Scheduler::scheduleFCFS()
         // Execute the process until it completes all commands.
         while (process->getCommandCounter() < process->getLinesOfCode()) {
           // testing purposes
-          cpu_clock->incrementActiveTicks();
           MemoryManager::getInstance().writeMemInfoToFile(100);
           if (delay_per_execution != 0) {
             // Wait for the next CPU cycle
@@ -223,6 +222,14 @@ void Scheduler::scheduleFCFS()
               CoreStateManager::getInstance().flipCoreState(assigned_core, ""); // Mark the core as idle.
             }
           }
+          {
+                std::unique_lock<std::mutex> lock(cpu_clock->getMutex());
+                // Wait for the clock cycle notification
+                cpu_clock->getCondition().wait(lock);
+
+                // Now, increment active_ticks when a process is being executed
+                cpu_clock->incrementActiveTicks();  // This will increment active_ticks in the scheduler
+            }
         }
 
         process->setState(Process::ProcessState::FINISHED); // Set the process state to FINISHED.
@@ -322,7 +329,7 @@ void Scheduler::scheduleRR(int core_id)
         else {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-
+        cpu_clock->incrementActiveTicks();
         // Execute the first command immediately, then apply delay for subsequent commands
         if (!is_first_command_executed || (++cycle_counter >= delay_per_execution)) {
           // added mutex lock since issue arises when multiple cpus are trying to execute

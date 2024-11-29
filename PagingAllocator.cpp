@@ -69,6 +69,7 @@ void* PagingAllocator::allocate(std::shared_ptr<Process> process)
     // }
     // Allocate frames for the process
     size_t frame_index = allocFrames(proc_frames_need, process_id);
+    pageTot += proc_frames_need;
     page_in += proc_frames_need;
     process->memAlloc(0, 1); // just to signify that process is allocated
     // DEBUGGING
@@ -98,6 +99,11 @@ size_t PagingAllocator::getPageOut() const
   return page_out;
 }
 
+size_t PagingAllocator::getPageTot() const 
+{
+  return pageTot;
+}
+
 void PagingAllocator::deallocate(std::shared_ptr<Process> process)
 {
   std::scoped_lock lock{mem_mtx};
@@ -124,6 +130,7 @@ void PagingAllocator::deallocate(std::shared_ptr<Process> process)
     //   std::cout << frame.first << ": " << frame.second << "\n";
     // }
     size_t proc_frames_need = (process->getMemReq() + mem_per_frame - 1) / mem_per_frame;
+    pageTot -= proc_frames_need;
     page_out += proc_frames_need;
     alloc_size -= process->getMemReq();
     process->memDealloc();
@@ -146,7 +153,7 @@ std::string PagingAllocator::visualizeMemory()
   return str_stream.str();
 }
 
-size_t PagingAllocator::getMem() const
+uint64_t PagingAllocator::getMem() const
 {
   return alloc_size;
 }

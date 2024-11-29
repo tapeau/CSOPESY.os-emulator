@@ -33,7 +33,7 @@ void Clock::startClock()
                 cycle_condition.notify_all();
 
                 // Pause for 1 millisecond to simulate a clock cycle
-                std::this_thread::sleep_for(std::chrono::microseconds(1000000));
+                std::this_thread::sleep_for(std::chrono::microseconds(1000));
             }
         });
     }

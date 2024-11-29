@@ -12,14 +12,15 @@ class PagingAllocator : public IMemoryAllocator
     std::string visualizeMemory() override;
 
     size_t getPageOut() const override;
-
+    size_t getPageTot() const override;
     size_t getPageIn() const override;
-    size_t getMem() const override;
+    uint64_t getMem() const override;
     
   private:
-    size_t alloc_size = 0;
+    uint64_t alloc_size = 0;
     size_t page_in = 0;
     size_t page_out = 0;
+    size_t pageTot = 0;
     size_t max_mem_size;
     size_t num_frame;
     std::unordered_map<size_t, size_t> frames;
