@@ -18,10 +18,12 @@ void MemoryManager::deleteFileInfo()
 }
 
 void MemoryManager::initAllocator(size_t max_overall_mem, size_t mem_per_frame)
+    // , std::deque<std::shared_ptr<Process>>& ready_queue
 {
   // FlatMemoryAllocator if mem_per_frame and max_overall_mem is the same
   if (max_overall_mem == mem_per_frame) {
     mem_allocator = std::make_shared<FlatMemoryAllocator>(max_overall_mem);
+        // , ready_queue
   } else {
     // PagingAllocator
     mem_allocator = std::make_shared<PagingAllocator>(max_overall_mem, mem_per_frame);
@@ -52,6 +54,7 @@ std::shared_ptr<IMemoryAllocator> MemoryManager::getAllocator()
   // std::scoped_lock<std::mutex> lock(mem_mutex);
   return mem_allocator;
 }
+
 
 // TODO: Probalby this is where process-smi prompt will get the string from
 // TODO: also for vmstat I guess?

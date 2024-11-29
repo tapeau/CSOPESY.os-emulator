@@ -1,6 +1,8 @@
 #include "FlatMemoryAllocator.h"
+#include "Process.h"
 #include <fstream>
 #include <iostream>
+#include <iterator>
 #include <memory>
 #include <mutex>
 #include <sstream>
@@ -11,8 +13,8 @@ const std::string BSFILE = "BackingStoreFile.txt";
 FlatMemoryAllocator::FlatMemoryAllocator(size_t max_size) : max_size(max_size), alloc_size(0) {
   memory.reserve(max_size);
   initializeMemory();
-  // std::cout << "Memory is now initialized with max_size: " << max_size << "\n";
 }
+// , std::deque<std::shared_ptr<Process>>& ready_queue
 
 FlatMemoryAllocator::~FlatMemoryAllocator()
 {
@@ -46,10 +48,10 @@ void FlatMemoryAllocator::initializeMemory()
 
 void* FlatMemoryAllocator::allocate(std::shared_ptr<Process> process)
 {
+  std::unique_lock<std::mutex> lock{mem_mtx};
   size_t size = process->getMemReq();
   for (size_t i = 0; i < max_size - size + 1; ++i) {
     if (!alloc_map[i] && canAllocAt(i, size) && !process->isAllocated()) {
-      std::scoped_lock<std::mutex> lock{mem_mtx};
       allocAt(i, size);
       // DEBUGGING PURPOSES:
       // std::cout << process->getName() << ", successfully allocated at " << std::to_string(i) << "~" + std::to_string(i+size) << "\n"; 
@@ -60,15 +62,32 @@ void* FlatMemoryAllocator::allocate(std::shared_ptr<Process> process)
                                  });
       processes_in_mem.insert(it, process);    
       processes_pid.push_back( process->getPID() );
-      std::cout << "processes_pid: ";
-      for (auto& elem : processes_pid) {
-        std::cout << elem << " ";
-      }
-      std::cout <<"\n";
+      // std::cout << "processes_pid: ";
+      // for (auto& elem : processes_pid) {
+      // std::cout << elem << " ";
+      // }
+      // std::cout <<"\n";
+      alloc_size += alloc_size;
+      return &processes_in_mem.back();
+    } 
+  }
+  // Backing Store operation
+  // procsses currently in memory
+  if (!processes_pid.empty()) {
+      size_t oldest_pid = processes_pid.front();
+      std::vector<std::shared_ptr<Process>>::iterator pid_it;
+      processes_pid.pop_front();
+      pid_it = std::find_if(processes_in_mem.begin(), processes_in_mem.end(),
+          [oldest_pid](const auto& entry) { return entry->getPID() == oldest_pid; });
+      std::shared_ptr<Process> oldest_proc = processes_in_mem.at(std::distance(processes_in_mem.begin(), pid_it));
+      storeToBS(oldest_proc);
+      deallocate(oldest_proc);
+      std::cout << "Storing " << oldest_proc->getName() << " into backingStore\n";
+      backing_store[oldest_proc->getPID()] = oldest_proc;
+      backing_store_pid.push_back(oldest_proc->getPID());
       return &processes_in_mem.back();
     }
-  }
-  // storeToBS(process);
+  // the problem would be how to stop currently executing processes
   return nullptr;
 }
 
@@ -98,6 +117,7 @@ void FlatMemoryAllocator::deallocate(std::shared_ptr<Process> process)
     }
   }
   process->memDealloc(); // marks process as deallocated
+  alloc_size -= process->getMemReq();
 }
 
 int FlatMemoryAllocator::compexternalFrag()
@@ -171,13 +191,16 @@ void FlatMemoryAllocator::printMemMap() const
 void FlatMemoryAllocator::retrieveFromBS()
 {
   std::ifstream myfile(BSFILE);
+  std::string line;
+
   std::shared_ptr<Process> retrieved_proc;
 
   if (!myfile) {
     return;
   }
-
-  std::string line;
+  std::getline(myfile, line);
+  std::stringstream str_stream(line);
+  
   if ( std::getline(myfile, line) ) {
     if ( !line.empty() ) {
       retrieved_proc = fromText(line);
@@ -191,7 +214,7 @@ void FlatMemoryAllocator::retrieveFromBS()
 
 void FlatMemoryAllocator::storeToBS(std::shared_ptr<Process> proc_to_store)
 {
-  std::ofstream myfile(BSFILE);
+  std::ofstream myfile(BSFILE, std::ios_base::app);
 
   myfile << proc_to_store->toText() << "\n";
 }
@@ -206,13 +229,31 @@ std::shared_ptr<Process> FlatMemoryAllocator::fromText(std::string& line)
   size_t memory_required;
 
   std::stringstream str_stream(line);
-  char delim;
-  str_stream >> pid >> delim
-    >> process_name >> delim
-    >> creation_time >> delim
-    >> command_counter >> delim
-    >> command_list_size >> delim
-    >> memory_required;
+  std::string token;
+
+  std::getline(str_stream, token, '|');
+  std::cout << "token @ 1: " << token << "\n";
+  pid = std::stoi(token);
+
+  std::getline(str_stream, token, '|');
+  process_name = token;
+
+  std::getline(str_stream, token, '|');
+  creation_time = token;
+
+  std::getline(str_stream, token, '|');
+  command_counter = std::stoi(token);
+
+  std::getline(str_stream, token, '|');
+  command_list_size = std::stoi(token);
+
+  std::getline(str_stream, token, '|');
+  memory_required = std::stoi(token);
+
+  std::cout << pid << "|" << process_name  << "|"
+    << creation_time << "|" << command_counter 
+    << "|" << command_list_size << "|" << memory_required;
+
   return std::make_shared<Process>( pid, process_name, creation_time, 
       command_counter, command_list_size, memory_required );
 }

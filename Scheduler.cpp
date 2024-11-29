@@ -237,9 +237,11 @@ void Scheduler::scheduleFCFS()
     } else if (process->hasFinished() && process->isAllocated()) {
       // scuffed check for some reason memory is not deallocating in else statement above
       // well adding this works.
+      // std::cout << "proc_finished and allocated \n";
       std::scoped_lock lock{fcfs_mutex};
       MemoryManager::getInstance().getAllocator()->deallocate(process);
     }
+    // std::cout << "Otherwise\n";
 
   }
 }

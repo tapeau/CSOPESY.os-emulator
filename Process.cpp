@@ -181,9 +181,9 @@ std::string Process::toText() const
 {
   // 1,Process_0,11/29/2024, 12:46:34 PM,0,100,4
   std::stringstream str_stream;
-  str_stream << process_id << "," << process_name
-    << "," << creation_time << "," << command_counter
-    << "," << command_list.size() << "," << requirement_flags.memory_required;
+  str_stream << process_id << "|" << process_name
+    << "|" << creation_time << "|" << command_counter
+    << "|" << command_list.size() << "|" << requirement_flags.memory_required;
 
   return str_stream.str();
 }
