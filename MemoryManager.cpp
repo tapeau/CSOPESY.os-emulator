@@ -26,6 +26,8 @@ void MemoryManager::initAllocator(size_t max_overall_mem, size_t mem_per_frame)
     // PagingAllocator
     mem_allocator = std::make_shared<PagingAllocator>(max_overall_mem, mem_per_frame);
   }
+  const std::string bs_file = "BackingStoreFile.txt";
+  std::remove(bs_file.c_str());
   deleteFileInfo();
 }
 

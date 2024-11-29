@@ -1,3 +1,4 @@
+#define WIN32_LEAN_AND_MEAN // used to avoid tons of errors when using windows.h
 #include "ConsoleScreen.h"
 #include "CoreStateManager.h"
 #include "MemoryManager.h"

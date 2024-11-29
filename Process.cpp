@@ -1,5 +1,8 @@
 #include <random>
+#include <sstream>
 #include "Process.h"
+
+const std::string BSFILE = "BackingStoreFile.txt";
 
 // Constructor implementation.
 Process::Process( size_t process_id, const std::string &process_name, const std::string &creation_time, 
@@ -12,6 +15,15 @@ Process::Process( size_t process_id, const std::string &process_name, const std:
   std::string file_path = process_name + ".txt";
   std::remove(file_path.c_str());
 }
+
+Process::Process( size_t pid, const std::string &process_name, const std::string &creation_time, 
+      size_t command_counter, size_t instructions, size_t memory_required )
+  : process_id(pid), process_name(process_name), creation_time(creation_time), 
+  core_id(-1), process_state(READY), requirement_flags{true, memory_required}
+{
+  generatePrintCommands(instructions, instructions);
+}
+    
 
 // Executes the current command in the command list.
 void Process::executeCurrentCommand()
@@ -164,3 +176,15 @@ void Process::generateMem(size_t min_mem, size_t max_mem)
 
   requirement_flags.memory_required = proc_mem;
 }
+
+std::string Process::toText() const
+{
+  // 1,Process_0,11/29/2024, 12:46:34 PM,0,100,4
+  std::stringstream str_stream;
+  str_stream << process_id << "," << process_name
+    << "," << creation_time << "," << command_counter
+    << "," << command_list.size() << "," << requirement_flags.memory_required;
+
+  return str_stream.str();
+}
+

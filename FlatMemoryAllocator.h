@@ -1,5 +1,6 @@
 #pragma once
 #include <cstddef>
+#include <deque>
 #include <memory>
 #include <mutex>
 #include <set>
@@ -26,6 +27,7 @@ class FlatMemoryAllocator : public IMemoryAllocator {
     std::vector<char> memory;
     std::unordered_map<size_t, bool> alloc_map;
     std::vector<std::shared_ptr<Process>> processes_in_mem;
+    std::deque<size_t> processes_pid;
     std::mutex mem_mtx;
 
     void initializeMemory();
@@ -33,4 +35,7 @@ class FlatMemoryAllocator : public IMemoryAllocator {
     void allocAt(size_t index, size_t size);
     void deallocAt(size_t index);
     int compexternalFrag();
+    std::shared_ptr<Process> fromText(std::string& line);
+    void storeToBS(std::shared_ptr<Process> proc_to_store);
+    void retrieveFromBS();
 };

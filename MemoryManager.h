@@ -1,7 +1,6 @@
 #include <memory>
 #include <vector>
 #include "IMemoryAllocator.h"
-#include "Scheduler.h"
 
 /*
  * Singleton Implementation from: 
