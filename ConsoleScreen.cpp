@@ -216,9 +216,9 @@ void ConsoleScreen::vmstat(std::map<std::string, std::shared_ptr<Process>> proce
     std::cout << std::setw(10) << max_mem << " K total memory\n" << std::endl;
     std::cout << std::setw(10) << MemoryManager::getInstance().getMemUsed() << " K used memory \n" << std::endl;
     std::cout << std::setw(10) << (max_mem - MemoryManager::getInstance().getMemUsed()) << " K free memory\n" << std::endl;
-    std::cout << std::setw(10) << (clock->getClock() - clock->getActiveTicks()) << " idle CPU ticks\n" << std::endl;
+    std::cout << std::setw(10) <<  (clock->getTicks() - clock->getActiveTicks()) << " idle CPU ticks\n" << std::endl;
     std::cout << std::setw(10) << clock->getActiveTicks() << " active CPU ticks\n" << std::endl;
-    std::cout << std::setw(10) << clock->getClock() << " total CPU ticks\n" << std::endl;
+    std::cout << std::setw(10) << clock->getTicks() << " total CPU ticks\n" << std::endl;
     std::cout << std::setw(10) << PagingAllocator::getInstance().getPageIn() << " pages paged in\n" << std::endl;
     std::cout << std::setw(10) << PagingAllocator::getInstance().getPageOut() << " pages paged out\n" << std::endl;
 

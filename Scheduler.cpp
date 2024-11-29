@@ -54,7 +54,7 @@ void Scheduler::setClock(Clock* cpu_clock)
 void Scheduler::start()
 {
   is_running = true; // Set the scheduler's running state to true.
-
+  
   // Create a worker thread for each CPU.
   for (int i = 1; i <= cpu_count; ++i)
   {
