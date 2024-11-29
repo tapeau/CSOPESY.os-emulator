@@ -16,6 +16,9 @@ class FlatMemoryAllocator : public IMemoryAllocator {
     void deallocate(std::shared_ptr<Process> process) override;
     std::string visualizeMemory() override;
     void* allocate(std::shared_ptr<Process> process) override;
+    size_t getMem() const override {
+        return alloc_size;
+    }
 
     void printMemMap() const;
 

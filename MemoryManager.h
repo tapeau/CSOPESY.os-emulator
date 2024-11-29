@@ -19,6 +19,7 @@ class MemoryManager
       return instance;
     }
 
+    size_t getMemUsed() const;
     static void destroy();
     std::shared_ptr<IMemoryAllocator> getAllocator();
     void initAllocator(size_t size, size_t min_mem);

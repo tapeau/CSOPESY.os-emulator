@@ -66,6 +66,8 @@ void* PagingAllocator::allocate(std::shared_ptr<Process> process)
 
   // Allocate frames for the process
   size_t frame_index = allocFrames(num_frames_need, process_id);
+  int memory_allocated = num_frames_need * mem_per_frame;
+  alloc_size += memory_allocated;
   pageIn++;
   return reinterpret_cast<void*>(frame_index);
 }
@@ -82,6 +84,8 @@ void PagingAllocator::deallocate(std::shared_ptr<Process> process)
     deallocFrames(1, frame_index);
     pageOut++;
   }
+    int memory_released = pageOut * mem_per_frame;
+    alloc_size -= memory_released;
 }
 
 std::string PagingAllocator::visualizeMemory() 

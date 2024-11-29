@@ -14,11 +14,15 @@ class PagingAllocator : public IMemoryAllocator
 
     int getPageIn();
     int getPageOut();
+    size_t getMem() const override {
+        return alloc_size;
+    }
     
   private:
     PagingAllocator() = default;
     PagingAllocator(const PagingAllocator&) = delete;
     PagingAllocator& operator=(const PagingAllocator&) = delete; 
+    int alloc_size = 0;
     int pageIn = 0;
     int pageOut = 0;
     size_t max_mem_size;

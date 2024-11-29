@@ -28,6 +28,13 @@ void MemoryManager::initAllocator(size_t max_overall_mem, size_t mem_per_frame)
   deleteFileInfo();
 }
 
+ size_t MemoryManager::getMemUsed() const {
+    if (mem_allocator) {
+        return mem_allocator->getMem();
+    }
+    return 0;
+}
+
 // dumps memory usage into file for given quantum_cycle
 void MemoryManager::writeMemInfoToFile(size_t qq) const
 {

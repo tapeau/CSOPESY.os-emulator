@@ -57,6 +57,7 @@ void* FlatMemoryAllocator::allocate(std::shared_ptr<Process> process)
                                      return p1->getStartLoc() < p2->getStartLoc();
                                  });
       processes_in_mem.insert(it, process);    
+      alloc_size += process->getEndLoc() - process->getStartLoc(); //+= size
       return &processes_in_mem.back();
     }
   }
@@ -74,6 +75,7 @@ void FlatMemoryAllocator::deallocAt(size_t index)
 
 void FlatMemoryAllocator::deallocate(std::shared_ptr<Process> process)
 {
+  int deallocsize = 0;
   // finds the process if it exists in process_in_mem
   std::lock_guard<std::mutex> lock(mem_mtx);
   auto it = std::find(processes_in_mem.begin(), processes_in_mem.end(), process);
@@ -84,8 +86,10 @@ void FlatMemoryAllocator::deallocate(std::shared_ptr<Process> process)
   for (size_t i = process->getStartLoc(); i < process->getEndLoc(); ++i) {
     if (alloc_map[i]) {
       deallocAt(i);
+      deallocsize++;
     }
   }
+  alloc_size -= deallocsize;
   process->memDealloc(); // marks process as deallocated
 }
 
